@@ -1,9 +1,17 @@
 import { useEffect, useState } from "react";
 
-import { Package, TriangleAlert, CircleX, CalendarClock } from "lucide-react";
+import {
+  Package,
+  TriangleAlert,
+  CircleX,
+  CalendarClock,
+  CalendarX,
+} from "lucide-react";
 
 import StatCard from "../components/dashboard/StatCard";
 import RecentProducts from "../components/dashboard/RecentProducts";
+import ExpirationAlerts from "../components/dashboard/ExpirationAlerts";
+
 import Spinner from "../components/common/Spinner";
 import ErrorMessage from "../components/common/ErrorMessage";
 
@@ -53,7 +61,14 @@ export default function Dashboard() {
     (product) => product.stock === 0,
   ).length;
 
-  // Productos que vencen dentro del período de alerta
+  // Productos vencidos
+  const expiredProducts = products.filter((product) => {
+    const daysRemaining = getDaysUntilExpiration(product.expirationDate);
+
+    return daysRemaining < 0;
+  }).length;
+
+  // Productos próximos a vencer
   const expiringProducts = products.filter((product) => {
     const daysRemaining = getDaysUntilExpiration(product.expirationDate);
 
@@ -86,7 +101,7 @@ export default function Dashboard() {
       </div>
 
       {/* Estadísticas */}
-      <div className="grid gap-4 sm:grid-cols-2 xl:grid-cols-4">
+      <div className="grid gap-4 sm:grid-cols-2 xl:grid-cols-5">
         <StatCard
           title="Productos"
           value={totalProducts}
@@ -112,8 +127,21 @@ export default function Dashboard() {
           title="Próximos a vencer"
           value={expiringProducts}
           icon={CalendarClock}
-          variant="blue"
+          variant="amber"
+          to="/products?expiration=expiring"
         />
+
+        <StatCard
+          title="Vencidos"
+          value={expiredProducts}
+          icon={CalendarX}
+          variant="red"
+          to="/products?expiration=expired"
+        />
+      </div>
+      {/* Alertas de vencimiento */}
+      <div className="mt-8">
+        <ExpirationAlerts products={products} />
       </div>
 
       {/* Productos recientes */}

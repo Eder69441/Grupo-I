@@ -16,6 +16,9 @@ import SuccessMessage from "../components/common/SuccessMessage";
 
 import { getCategories } from "../services/categoryService";
 
+import { getDaysUntilExpiration } from "../utils/expiration";
+import { EXPIRATION_WARNING_DAYS } from "../constants/inventory";
+
 export default function Products() {
   const { user } = useAuth();
   const navigate = useNavigate();
@@ -35,6 +38,12 @@ export default function Products() {
   const [deleting, setDeleting] = useState(false);
 
   const [categories, setCategories] = useState([]);
+
+  const [expirationStatus, setExpirationStatus] = useState(() => {
+    const params = new URLSearchParams(location.search);
+
+    return params.get("expiration") || "";
+  });
 
   useEffect(() => {
     const loadProducts = async () => {
@@ -84,7 +93,24 @@ export default function Products() {
 
     const matchesCategory = !category || product.category === category;
 
-    return matchesSearch && matchesCategory;
+    const daysRemaining = getDaysUntilExpiration(product.expirationDate);
+
+    let matchesExpiration = true;
+
+    if (expirationStatus === "valid") {
+      matchesExpiration = daysRemaining > EXPIRATION_WARNING_DAYS;
+    }
+
+    if (expirationStatus === "expiring") {
+      matchesExpiration =
+        daysRemaining >= 0 && daysRemaining <= EXPIRATION_WARNING_DAYS;
+    }
+
+    if (expirationStatus === "expired") {
+      matchesExpiration = daysRemaining < 0;
+    }
+
+    return matchesSearch && matchesCategory && matchesExpiration;
   });
 
   const handleDelete = (product) => {
@@ -157,6 +183,8 @@ export default function Products() {
           category={category}
           setCategory={setCategory}
           categories={categories}
+          expirationStatus={expirationStatus}
+          setExpirationStatus={setExpirationStatus}
         />
       </div>
 

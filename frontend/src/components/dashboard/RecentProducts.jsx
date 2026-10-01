@@ -4,7 +4,7 @@ import { formatCurrency } from "../../utils/formatCurrency";
 import { formatDate } from "../../utils/formatDate";
 
 export default function RecentProducts({ products }) {
-  const recentProducts = products.reverse().slice(0, 5);
+const recentProducts = [...products].slice(0, 5);
 
   return (
     <div className="mt-6 overflow-hidden rounded-xl border bg-white shadow-sm">
