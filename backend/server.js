@@ -16,7 +16,7 @@ connectDB();
 
 const allowedOrigins = [
   "http://localhost:5173",
-  "https://pharmacy-1-zom9.onrender.com",
+  "https://grupo-i.onrender.com/",
 ];
 
 app.use(
