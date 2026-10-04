@@ -12,6 +12,7 @@ import NotFound from "../pages/NotFound";
 import Locations from "../pages/Locations";
 import NewSale from "../pages/NewSale";
 import Sales from "../pages/Sales";
+import Cash from "../pages/Cash";
 
 import MainLayout from "../components/layout/MainLayout";
 
@@ -42,6 +43,8 @@ export default function AppRouter() {
             <Route path="sales/new" element={<NewSale />} />
 
             <Route path="movements" element={<Movements />} />
+
+            <Route path="/cash" element={<Cash />}/>
 
             {/* Rutas de administrador */}
             <Route element={<RoleRoute roles={[ROLES.ADMIN]} />}>

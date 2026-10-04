@@ -12,6 +12,7 @@ import {
   MapPin,
   ShoppingCart,
   ReceiptText,
+  Landmark,
 } from "lucide-react";
 
 import useAuth from "../../context/useAuth";
@@ -110,6 +111,12 @@ export default function Sidebar({ isOpen, onClose }) {
               <NavLink to="/sales" end onClick={onClose} className={linkClass}>
                 <ReceiptText size={19} />
                 Historial
+              </NavLink>
+
+              {/* Caja */}
+              <NavLink to="/cash" onClick={onClose} className={linkClass}>
+                <Landmark size={19} />
+                Caja
               </NavLink>
             </div>
           </div>
