@@ -1,9 +1,9 @@
-import { CheckCircle2, CircleMinus, CirclePlus } from "lucide-react";
+import { CheckCircle2, CircleMinus, CirclePlus, Eye } from "lucide-react";
 
 import { formatCurrency } from "../../utils/formatCurrency";
 import { formatDateTime } from "../../utils/formatDateTime";
 
-export default function CashHistoryTable({ sessions }) {
+export default function CashHistoryTable({ sessions, onView }) {
   if (!sessions.length) {
     return (
       <div className="rounded-xl border border-gray-200 bg-white p-8 text-center text-sm text-gray-500">
@@ -41,6 +41,10 @@ export default function CashHistoryTable({ sessions }) {
               <th className="px-4 py-3 text-left text-xs font-semibold uppercase text-gray-500">
                 Estado
               </th>
+
+              <th className="px-4 py-3 text-right text-xs font-semibold uppercase text-gray-500">
+                Detalle
+              </th>
             </tr>
           </thead>
 
@@ -49,7 +53,11 @@ export default function CashHistoryTable({ sessions }) {
               const difference = session.difference || 0;
 
               return (
-                <tr key={session._id} className="hover:bg-gray-50">
+                <tr
+                  key={session._id}
+                  onClick={() => onView?.(session)}
+                  className="cursor-pointer transition hover:bg-emerald-50/50"
+                >
                   <td className="px-4 py-4">
                     <p className="text-sm font-semibold text-gray-900">
                       {session.sessionNumber}
@@ -105,6 +113,20 @@ export default function CashHistoryTable({ sessions }) {
                         Cerrada
                       </span>
                     )}
+                  </td>
+
+                  <td className="px-4 py-4 text-right">
+                    <button
+                      type="button"
+                      onClick={(event) => {
+                        event.stopPropagation();
+                        onView?.(session);
+                      }}
+                      className="inline-flex items-center gap-1.5 rounded-lg px-3 py-2 text-sm font-medium text-emerald-700 transition hover:bg-emerald-50"
+                    >
+                      <Eye size={16} />
+                      Ver
+                    </button>
                   </td>
                 </tr>
               );

@@ -8,12 +8,14 @@ import CloseCashForm from "../components/cash/CloseCashForm";
 import CashHistoryTable from "../components/cash/CashHistoryTable";
 import CashSummary from "../components/cash/CashSummary";
 import CashClosingSummary from "../components/cash/CashClosingSummary";
+import CashSessionDetail from "../components/cash/CashSessionDetail";
 
 import Spinner from "../components/common/Spinner";
 import ErrorMessage from "../components/common/ErrorMessage";
 
 import {
   closeCashSession,
+  getCashSessionById,
   getCashSessions,
   getCurrentCashSession,
   openCashSession,
@@ -33,6 +35,10 @@ export default function Cash() {
   const [success, setSuccess] = useState("");
 
   const [lastClosedSession, setLastClosedSession] = useState(null);
+
+  const [selectedSession, setSelectedSession] = useState(null);
+
+  const [loadingDetail, setLoadingDetail] = useState(false);
 
   useEffect(() => {
     const loadCashData = async () => {
@@ -132,6 +138,26 @@ export default function Cash() {
     );
   }
 
+  const handleViewSession = async (session) => {
+    try {
+      setLoadingDetail(true);
+      setError("");
+
+      const response = await getCashSessionById(session._id);
+
+      setSelectedSession(response.data);
+    } catch (error) {
+      console.error(error);
+
+      setError(
+        error.response?.data?.message ||
+          "No se pudo consultar el detalle de la caja.",
+      );
+    } finally {
+      setLoadingDetail(false);
+    }
+  };
+
   return (
     <div>
       <div className="mb-8">
@@ -190,7 +216,11 @@ export default function Cash() {
           <OpenCashForm onOpen={handleOpen} loading={processing} />
         </div>
       )}
-
+      {loadingDetail && (
+        <p className="mb-3 text-sm text-gray-500">
+          Cargando detalle de caja...
+        </p>
+      )}
       <div className="mt-8">
         <div className="mb-4">
           <h2 className="text-base font-semibold text-gray-900">
@@ -202,8 +232,14 @@ export default function Cash() {
           </p>
         </div>
 
-        <CashHistoryTable sessions={sessions} />
+        <CashHistoryTable sessions={sessions} onView={handleViewSession} />
       </div>
+      {selectedSession && (
+        <CashSessionDetail
+          session={selectedSession}
+          onClose={() => setSelectedSession(null)}
+        />
+      )}
     </div>
   );
 }

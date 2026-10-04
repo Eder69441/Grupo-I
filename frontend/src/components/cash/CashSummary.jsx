@@ -4,6 +4,7 @@ import {
   PackageCheck,
   ReceiptText,
   WalletCards,
+  RotateCcw,
 } from "lucide-react";
 
 import { formatCurrency } from "../../utils/formatCurrency";
@@ -100,6 +101,62 @@ export default function CashSummary({ summary }) {
           </span>
         </div>
       </div>
+
+      {/* Devoluciones */}
+      {summary.totalRefunds > 0 && (
+        <div className="mt-6 rounded-xl border border-red-100 bg-red-50/50 p-4">
+          <div className="mb-4 flex items-center justify-between">
+            <div className="flex items-center gap-2">
+              <RotateCcw size={18} className="text-red-600" />
+
+              <h3 className="text-sm font-semibold text-gray-900">
+                Devoluciones
+              </h3>
+            </div>
+
+            <span className="rounded-full bg-red-100 px-2.5 py-1 text-xs font-semibold text-red-700">
+              {summary.returnsCount} devolución
+              {summary.returnsCount !== 1 ? "es" : ""}
+            </span>
+          </div>
+
+          <div className="space-y-3">
+            <div className="flex justify-between text-sm">
+              <span className="text-gray-600">Reembolso en efectivo</span>
+
+              <span className="font-semibold text-red-600">
+                -{formatCurrency(summary.cashRefunds)}
+              </span>
+            </div>
+
+            <div className="flex justify-between text-sm">
+              <span className="text-gray-600">Reembolso en tarjeta</span>
+
+              <span className="font-semibold text-red-600">
+                -{formatCurrency(summary.cardRefunds)}
+              </span>
+            </div>
+
+            <div className="flex justify-between text-sm">
+              <span className="text-gray-600">Reembolso por transferencia</span>
+
+              <span className="font-semibold text-red-600">
+                -{formatCurrency(summary.transferRefunds)}
+              </span>
+            </div>
+
+            <div className="flex justify-between border-t border-red-100 pt-3">
+              <span className="text-sm font-semibold text-gray-900">
+                Total reembolsado
+              </span>
+
+              <span className="font-bold text-red-600">
+                -{formatCurrency(summary.totalRefunds)}
+              </span>
+            </div>
+          </div>
+        </div>
+      )}
     </div>
   );
 }

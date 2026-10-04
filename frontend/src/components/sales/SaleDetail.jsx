@@ -8,13 +8,36 @@ import {
   Package,
   ReceiptText,
   XCircle,
+  RotateCcw,
 } from "lucide-react";
 
 import { formatCurrency } from "../../utils/formatCurrency";
 import { formatDateTime } from "../../utils/formatDateTime";
+import ReturnForm from "../returns/ReturnForm";
+
+import { createReturn, getReturnsBySale } from "../../services/returnService";
 
 export default function SaleDetail({ sale, onCancelSale, cancelling = false }) {
   const [showCancelConfirmation, setShowCancelConfirmation] = useState(false);
+
+  const [showReturnForm, setShowReturnForm] =
+  useState(false);
+
+const [previousReturns, setPreviousReturns] =
+  useState([]);
+
+const [loadingReturns, setLoadingReturns] =
+  useState(false);
+
+const [savingReturn, setSavingReturn] =
+  useState(false);
+
+const [returnError, setReturnError] =
+  useState("");
+
+const [returnSuccess, setReturnSuccess] =
+  useState("");
+
 
   if (!sale) {
     return null;
@@ -36,6 +59,8 @@ export default function SaleDetail({ sale, onCancelSale, cancelling = false }) {
 
   const isCancelled = sale.status === "cancelled";
 
+  const isCashSessionClosed = sale.cashSession?.status === "closed";
+
   const handleConfirmCancellation = async () => {
     const success = await onCancelSale(sale._id);
 
@@ -43,6 +68,63 @@ export default function SaleDetail({ sale, onCancelSale, cancelling = false }) {
       setShowCancelConfirmation(false);
     }
   };
+
+  const handleOpenReturn = async () => {
+  try {
+    setLoadingReturns(true);
+    setReturnError("");
+    setReturnSuccess("");
+
+    const response =
+      await getReturnsBySale(sale._id);
+
+    setPreviousReturns(response.data);
+    setShowReturnForm(true);
+  } catch (error) {
+    console.error(error);
+
+    setReturnError(
+      error.response?.data?.message ||
+        "No se pudieron consultar las devoluciones anteriores.",
+    );
+  } finally {
+    setLoadingReturns(false);
+  }
+};
+
+const handleCreateReturn = async (data) => {
+  try {
+    setSavingReturn(true);
+    setReturnError("");
+    setReturnSuccess("");
+
+    await createReturn(data);
+
+    const response =
+      await getReturnsBySale(sale._id);
+
+    setPreviousReturns(response.data);
+
+    setShowReturnForm(false);
+
+    setReturnSuccess(
+      "Devolución registrada correctamente. El inventario fue actualizado.",
+    );
+
+    return true;
+  } catch (error) {
+    console.error(error);
+
+    setReturnError(
+      error.response?.data?.message ||
+        "No se pudo registrar la devolución.",
+    );
+
+    return false;
+  } finally {
+    setSavingReturn(false);
+  }
+};
 
   return (
     <div>
@@ -255,9 +337,68 @@ export default function SaleDetail({ sale, onCancelSale, cancelling = false }) {
           </div>
         </div>
       </div>
+{/* Devoluciones */}
+{!isCancelled && (
+  <div className="mt-6 border-t border-gray-200 pt-5">
+    {returnError && (
+      <div className="mb-4 rounded-lg border border-red-200 bg-red-50 px-4 py-3 text-sm text-red-700">
+        {returnError}
+      </div>
+    )}
+
+    {returnSuccess && (
+      <div className="mb-4 rounded-lg border border-emerald-200 bg-emerald-50 px-4 py-3 text-sm font-medium text-emerald-700">
+        {returnSuccess}
+      </div>
+    )}
+
+    {!showReturnForm ? (
+      <button
+        type="button"
+        onClick={handleOpenReturn}
+        disabled={loadingReturns}
+        className="
+          inline-flex w-full items-center
+          justify-center gap-2
+          rounded-lg border border-emerald-200
+          bg-white px-4 py-2.5
+          text-sm font-semibold
+          text-emerald-700
+          transition
+          hover:bg-emerald-50
+          disabled:cursor-not-allowed
+          disabled:opacity-50
+        "
+      >
+        <RotateCcw size={18} />
+
+        {loadingReturns
+          ? "Consultando..."
+          : "Registrar devolución"}
+      </button>
+    ) : (
+      <div className="rounded-xl border border-gray-200 bg-gray-50/50 p-4">
+        <ReturnForm
+          sale={sale}
+          previousReturns={
+            previousReturns
+          }
+          onSubmit={
+            handleCreateReturn
+          }
+          onCancel={() =>
+            setShowReturnForm(false)
+          }
+          loading={savingReturn}
+        />
+      </div>
+    )}
+  </div>
+)}
+      
 
       {/* Anular venta */}
-      {!isCancelled && (
+      {!isCancelled && !isCashSessionClosed && (
         <div className="mt-6 border-t border-gray-200 pt-5">
           {!showCancelConfirmation ? (
             <button
@@ -265,16 +406,16 @@ export default function SaleDetail({ sale, onCancelSale, cancelling = false }) {
               onClick={() => setShowCancelConfirmation(true)}
               disabled={cancelling}
               className="
-                inline-flex w-full items-center
-                justify-center gap-2 rounded-lg
-                border border-red-200 bg-white
-                px-4 py-2.5 text-sm
-                font-semibold text-red-600
-                transition
-                hover:bg-red-50
-                disabled:cursor-not-allowed
-                disabled:opacity-50
-              "
+          inline-flex w-full items-center
+          justify-center gap-2 rounded-lg
+          border border-red-200 bg-white
+          px-4 py-2.5 text-sm
+          font-semibold text-red-600
+          transition
+          hover:bg-red-50
+          disabled:cursor-not-allowed
+          disabled:opacity-50
+        "
             >
               <XCircle size={18} />
               Anular venta
@@ -305,13 +446,13 @@ export default function SaleDetail({ sale, onCancelSale, cancelling = false }) {
                   onClick={() => setShowCancelConfirmation(false)}
                   disabled={cancelling}
                   className="
-                    rounded-lg border border-gray-300
-                    bg-white px-4 py-2
-                    text-sm font-semibold text-gray-700
-                    transition hover:bg-gray-50
-                    disabled:cursor-not-allowed
-                    disabled:opacity-50
-                  "
+              rounded-lg border border-gray-300
+              bg-white px-4 py-2
+              text-sm font-semibold text-gray-700
+              transition hover:bg-gray-50
+              disabled:cursor-not-allowed
+              disabled:opacity-50
+            "
                 >
                   No, mantener venta
                 </button>
@@ -321,14 +462,14 @@ export default function SaleDetail({ sale, onCancelSale, cancelling = false }) {
                   onClick={handleConfirmCancellation}
                   disabled={cancelling}
                   className="
-                    inline-flex items-center justify-center
-                    gap-2 rounded-lg bg-red-600
-                    px-4 py-2 text-sm
-                    font-semibold text-white
-                    transition hover:bg-red-700
-                    disabled:cursor-not-allowed
-                    disabled:bg-red-300
-                  "
+              inline-flex items-center justify-center
+              gap-2 rounded-lg bg-red-600
+              px-4 py-2 text-sm
+              font-semibold text-white
+              transition hover:bg-red-700
+              disabled:cursor-not-allowed
+              disabled:bg-red-300
+            "
                 >
                   <XCircle size={17} />
 
@@ -337,6 +478,30 @@ export default function SaleDetail({ sale, onCancelSale, cancelling = false }) {
               </div>
             </div>
           )}
+        </div>
+      )}
+
+      {/* Venta perteneciente a una caja cerrada */}
+      {!isCancelled && isCashSessionClosed && (
+        <div className="mt-6 border-t border-gray-200 pt-5">
+          <div className="flex gap-3 rounded-xl border border-amber-200 bg-amber-50 p-4">
+            <AlertTriangle
+              size={20}
+              className="mt-0.5 shrink-0 text-amber-600"
+            />
+
+            <div>
+              <p className="text-sm font-semibold text-amber-800">
+                Esta venta pertenece a una caja cerrada
+              </p>
+
+              <p className="mt-1 text-sm text-amber-700">
+                La venta ya no puede ser anulada porque forma parte de un cierre
+                de caja completado. Si el cliente devuelve productos, la
+                operación debe registrarse como devolución o reembolso.
+              </p>
+            </div>
+          </div>
         </div>
       )}
     </div>

@@ -6,6 +6,7 @@ import {
   CreditCard,
   Printer,
   WalletCards,
+  RotateCcw,
   X,
 } from "lucide-react";
 
@@ -190,6 +191,55 @@ export default function CashClosingSummary({ session, onClose }) {
           </div>
         </div>
 
+        {/* Devoluciones */}
+        {session.totalRefunds > 0 && (
+          <div className="mb-6">
+            <div className="mb-3 flex items-center gap-2">
+              <RotateCcw size={17} className="text-red-600" />
+
+              <h3 className="text-sm font-semibold text-gray-900">
+                Devoluciones y reembolsos
+              </h3>
+            </div>
+
+            <div className="divide-y divide-gray-100 rounded-lg border border-gray-200">
+              <div className="flex items-center justify-between p-4">
+                <span className="text-sm text-gray-600">Efectivo</span>
+
+                <span className="text-sm font-semibold text-red-600">
+                  -{formatCurrency(session.cashRefunds || 0)}
+                </span>
+              </div>
+
+              <div className="flex items-center justify-between p-4">
+                <span className="text-sm text-gray-600">Tarjeta</span>
+
+                <span className="text-sm font-semibold text-red-600">
+                  -{formatCurrency(session.cardRefunds || 0)}
+                </span>
+              </div>
+
+              <div className="flex items-center justify-between p-4">
+                <span className="text-sm text-gray-600">Transferencia</span>
+
+                <span className="text-sm font-semibold text-red-600">
+                  -{formatCurrency(session.transferRefunds || 0)}
+                </span>
+              </div>
+
+              <div className="flex items-center justify-between bg-red-50 p-4">
+                <span className="text-sm font-semibold text-gray-900">
+                  Total reembolsado
+                </span>
+
+                <span className="font-bold text-red-600">
+                  -{formatCurrency(session.totalRefunds || 0)}
+                </span>
+              </div>
+            </div>
+          </div>
+        )}
+
         {/* Cuadre */}
         <div>
           <h3 className="mb-3 text-sm font-semibold text-gray-900">
@@ -212,6 +262,16 @@ export default function CashClosingSummary({ session, onClose }) {
                 {formatCurrency(session.cashSales)}
               </span>
             </div>
+
+            {session.cashRefunds > 0 && (
+              <div className="flex justify-between gap-4 text-sm">
+                <span className="text-gray-500">Reembolsos en efectivo</span>
+
+                <span className="font-semibold text-red-600">
+                  -{formatCurrency(session.cashRefunds)}
+                </span>
+              </div>
+            )}
 
             <div className="flex justify-between gap-4 border-t border-gray-100 pt-3 text-sm">
               <span className="font-medium text-gray-700">

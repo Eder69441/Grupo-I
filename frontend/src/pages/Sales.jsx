@@ -337,6 +337,7 @@ export default function Sales() {
           }
         }}
         title="Detalle de venta"
+        size="lg"
       >
         <SaleDetail
           sale={selectedSale}
