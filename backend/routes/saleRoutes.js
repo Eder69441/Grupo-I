@@ -196,10 +196,10 @@ router.post("/", protect, async (req, res) => {
     console.error("Error al registrar venta:", error);
 
     if (error.code === "CASH_SESSION_NOT_FOUND") {
-  return res.status(400).json({
-    message: error.message,
-  });
-}
+      return res.status(400).json({
+        message: error.message,
+      });
+    }
 
     if (error.message === "INVALID_QUANTITY") {
       return res.status(400).json({
@@ -232,8 +232,6 @@ router.post("/", protect, async (req, res) => {
         message:
           "El monto recibido no puede ser menor que el total de la venta.",
       });
-
-      
     }
 
     res.status(500).json({
@@ -261,6 +259,17 @@ router.patch("/:id/cancel", protect, async (req, res) => {
     // EVITAR DOBLE ANULACIÓN
     if (sale.status === "cancelled") {
       throw new Error("SALE_ALREADY_CANCELLED");
+    }
+
+    // Verificar si la venta pertenece a una caja cerrada
+    if (sale.cashSession) {
+      const saleCashSession = await CashSession.findById(
+        sale.cashSession,
+      ).session(session);
+
+      if (saleCashSession && saleCashSession.status === "closed") {
+        throw new Error("CASH_SESSION_CLOSED");
+      }
     }
 
     // DEVOLVER PRODUCTOS AL INVENTARIO
@@ -319,7 +328,7 @@ router.patch("/:id/cancel", protect, async (req, res) => {
     const cancelledSale = await Sale.findById(sale._id)
       .populate("user", "name username")
       .populate("items.product", "name")
-      .populate("cashSession", "sessionNumber status openedAt",)
+      .populate("cashSession", "sessionNumber status openedAt");
 
     res.json(cancelledSale);
   } catch (error) {
@@ -340,6 +349,16 @@ router.patch("/:id/cancel", protect, async (req, res) => {
         message: "La venta ya fue anulada.",
       });
     }
+
+    if (
+  error.message ===
+  "CASH_SESSION_CLOSED"
+) {
+  return res.status(400).json({
+    message:
+      "No se puede anular una venta perteneciente a una caja cerrada. Debe registrarse como devolución o reembolso.",
+  });
+}
 
     if (error.message.startsWith("PRODUCT_NOT_FOUND_CANCEL:")) {
       const productName = error.message.split(":")[1];

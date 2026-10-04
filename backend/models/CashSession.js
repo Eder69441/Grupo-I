@@ -68,6 +68,29 @@ const cashSessionSchema = new mongoose.Schema(
       min: 0,
       default: 0,
     },
+    cashRefunds: {
+      type: Number,
+      min: 0,
+      default: 0,
+    },
+
+    cardRefunds: {
+      type: Number,
+      min: 0,
+      default: 0,
+    },
+
+    transferRefunds: {
+      type: Number,
+      min: 0,
+      default: 0,
+    },
+
+    totalRefunds: {
+      type: Number,
+      min: 0,
+      default: 0,
+    },
 
     expectedCash: {
       type: Number,

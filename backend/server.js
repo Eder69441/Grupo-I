@@ -12,6 +12,7 @@ const movementRoutes = require("./routes/movementRoutes");
 const locationRoutes = require("./routes/locationRoutes");
 const saleRoutes = require("./routes/saleRoutes");
 const cashSessionRoutes = require("./routes/cashSessionRoutes");
+const returnRoutes = require("./routes/returnRoutes");
 
 const app = express();
 
@@ -44,6 +45,7 @@ app.use("/api/categories", categoryRoutes);
 app.use("/api/movements", movementRoutes);
 app.use("/api/locations", locationRoutes);
 app.use("/api/sales", saleRoutes);
+app.use("/api/returns", returnRoutes);
 app.use("/api/cash-sessions", cashSessionRoutes);
 
 const PORT = process.env.PORT || 3000;
