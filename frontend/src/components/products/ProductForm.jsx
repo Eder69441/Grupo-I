@@ -1,4 +1,4 @@
-import { useState } from "react";
+import { useState, useEffect } from "react";
 import { useNavigate } from "react-router-dom";
 import {
   CalendarDays,
@@ -8,6 +8,8 @@ import {
   Tags,
   Boxes,
 } from "lucide-react";
+
+import { getLocations } from "../../services/locationService";
 
 import Button from "../common/Button";
 
@@ -28,7 +30,29 @@ export default function ProductForm({
     price: initialData.price || "",
     stock: initialData.stock ?? "",
     expirationDate: initialData.expirationDate || "",
+    location:
+      typeof initialData.location === "object"
+        ? initialData.location?._id || ""
+        : initialData.location || "",
   });
+
+  const [locations, setLocations] = useState([]);
+  const [locationsLoading, setLocationsLoading] = useState(true);
+
+  useEffect(() => {
+    const loadLocations = async () => {
+      try {
+        const response = await getLocations();
+        setLocations(response.data);
+      } catch (error) {
+        console.error("Error al cargar ubicaciones:", error);
+      } finally {
+        setLocationsLoading(false);
+      }
+    };
+
+    loadLocations();
+  }, []);
 
   const [errors, setErrors] = useState({});
 
@@ -55,6 +79,10 @@ export default function ProductForm({
 
     if (!form.category) {
       newErrors.category = "Selecciona una categoría.";
+    }
+
+    if (!form.location) {
+      newErrors.location = "Selecciona una ubicación.";
     }
 
     if (form.price === "") {
@@ -210,6 +238,39 @@ export default function ProductForm({
 
           {errors.category && (
             <p className="mt-1.5 text-sm text-red-600">{errors.category}</p>
+          )}
+        </div>
+        {/* Ubicación */}
+        <div>
+          <label
+            htmlFor="location"
+            className="mb-2 block text-sm font-medium text-slate-700"
+          >
+            Ubicación física
+          </label>
+
+          <select
+            id="location"
+            name="location"
+            value={form.location || ""}
+            onChange={handleChange}
+            disabled={locationsLoading}
+            className={getInputClass(errors.location)}
+          >
+            <option value="">
+              {locationsLoading
+                ? "Cargando ubicaciones..."
+                : "Seleccionar ubicación"}
+            </option>
+
+            {locations.map((location) => (
+              <option key={location._id} value={location._id}>
+                {`Tramo ${location.section} · Estante ${location.shelf} · Nivel ${location.level}`}
+              </option>
+            ))}
+          </select>
+          {errors.location && (
+            <p className="mt-1.5 text-sm text-red-600">{errors.location}</p>
           )}
         </div>
 

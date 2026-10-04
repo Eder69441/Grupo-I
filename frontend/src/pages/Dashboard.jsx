@@ -6,6 +6,9 @@ import {
   CircleX,
   CalendarClock,
   CalendarX,
+  ShoppingCart,
+  DollarSign,
+  PackageCheck,
 } from "lucide-react";
 
 import StatCard from "../components/dashboard/StatCard";
@@ -17,6 +20,8 @@ import ErrorMessage from "../components/common/ErrorMessage";
 
 import { getProducts } from "../services/productService";
 import { getDaysUntilExpiration } from "../utils/expiration";
+import { getSales } from "../services/saleService";
+import { formatCurrency } from "../utils/formatCurrency";
 
 import {
   LOW_STOCK_LIMIT,
@@ -27,15 +32,18 @@ export default function Dashboard() {
   const [products, setProducts] = useState([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState("");
+  const [sales, setSales] = useState([]);
 
   useEffect(() => {
-    const loadProducts = async () => {
+    const loadDashboard = async () => {
       try {
-        setError("");
+        const [productsResponse, salesResponse] = await Promise.all([
+          getProducts(),
+          getSales(),
+        ]);
 
-        const response = await getProducts();
-
-        setProducts(response.data);
+        setProducts(productsResponse.data);
+        setSales(salesResponse.data);
       } catch (error) {
         console.error(error);
 
@@ -45,7 +53,7 @@ export default function Dashboard() {
       }
     };
 
-    loadProducts();
+    loadDashboard();
   }, []);
 
   // Total de productos registrados
@@ -75,6 +83,37 @@ export default function Dashboard() {
     return daysRemaining >= 0 && daysRemaining <= EXPIRATION_WARNING_DAYS;
   }).length;
 
+  // Ventas realizadas hoy
+  const today = new Date();
+
+  const todaySales = sales.filter((sale) => {
+    const saleDate = new Date(sale.createdAt);
+
+    return (
+      saleDate.getFullYear() === today.getFullYear() &&
+      saleDate.getMonth() === today.getMonth() &&
+      saleDate.getDate() === today.getDate() &&
+      sale.status !== "cancelled"
+    );
+  });
+
+  // Cantidad de ventas realizadas hoy
+  const totalSalesToday = todaySales.length;
+
+  // Ingresos generados hoy
+  const revenueToday = todaySales.reduce(
+    (total, sale) => total + sale.total,
+    0,
+  );
+
+  // Unidades vendidas hoy
+  const unitsSoldToday = todaySales.reduce(
+    (total, sale) =>
+      total +
+      sale.items.reduce((itemTotal, item) => itemTotal + item.quantity, 0),
+    0,
+  );
+
   if (loading) {
     return (
       <div className="flex min-h-64 items-center justify-center">
@@ -96,7 +135,55 @@ export default function Dashboard() {
         </h1>
 
         <p className="mt-1 text-sm text-gray-500">
-          Resumen general del inventario de la farmacia.
+          Resumen de ventas, inventario y alertas.
+        </p>
+      </div>
+
+      {/* Actividad comercial */}
+      <div className="mb-8">
+        <div className="mb-4">
+          <h2 className="text-base font-semibold text-gray-900">
+            Actividad de hoy
+          </h2>
+
+          <p className="mt-1 text-sm text-gray-500">
+            Resumen de las operaciones comerciales del día.
+          </p>
+        </div>
+
+        <div className="grid gap-4 sm:grid-cols-2 xl:grid-cols-3">
+          <StatCard
+            title="Ventas de hoy"
+            value={totalSalesToday}
+            icon={ShoppingCart}
+            variant="blue"
+            to="/sales"
+          />
+
+          <StatCard
+            title="Ingresos de hoy"
+            value={formatCurrency(revenueToday)}
+            icon={DollarSign}
+            variant="emerald"
+            to="/sales"
+          />
+
+          <StatCard
+            title="Unidades vendidas"
+            value={unitsSoldToday}
+            icon={PackageCheck}
+            variant="blue"
+            to="/sales"
+          />
+        </div>
+      </div>
+      <div className="mb-4">
+        <h2 className="text-base font-semibold text-gray-900">
+          Estado del inventario
+        </h2>
+
+        <p className="mt-1 text-sm text-gray-500">
+          Existencias y alertas que requieren atención.
         </p>
       </div>
 

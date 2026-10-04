@@ -29,6 +29,7 @@ export default function Products() {
   const [products, setProducts] = useState([]);
   const [search, setSearch] = useState("");
   const [category, setCategory] = useState("");
+  const [section, setSection] = useState("");
 
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState("");
@@ -44,6 +45,12 @@ export default function Products() {
 
     return params.get("expiration") || "";
   });
+
+  const sections = [
+    ...new Set(
+      products.map((product) => product.location?.section).filter(Boolean),
+    ),
+  ].sort();
 
   useEffect(() => {
     const loadProducts = async () => {
@@ -87,9 +94,17 @@ export default function Products() {
   }, [success]);
 
   const filteredProducts = products.filter((product) => {
-    const matchesSearch = product.name
-      .toLowerCase()
-      .includes(search.toLowerCase());
+    const normalizedSearch = search.trim().toLowerCase();
+
+    const locationCode = product.location
+      ? `${product.location.section}-${product.location.shelf}-${product.location.level}`.toLowerCase()
+      : "";
+
+    const matchesSearch =
+      product.name.toLowerCase().includes(normalizedSearch) ||
+      locationCode.includes(normalizedSearch);
+
+    const matchesSection = !section || product.location?.section === section;
 
     const matchesCategory = !category || product.category === category;
 
@@ -110,7 +125,9 @@ export default function Products() {
       matchesExpiration = daysRemaining < 0;
     }
 
-    return matchesSearch && matchesCategory && matchesExpiration;
+    return (
+      matchesSearch && matchesCategory && matchesSection && matchesExpiration
+    );
   });
 
   const handleDelete = (product) => {
@@ -185,6 +202,9 @@ export default function Products() {
           categories={categories}
           expirationStatus={expirationStatus}
           setExpirationStatus={setExpirationStatus}
+          section={section}
+          onSectionChange={setSection}
+          sections={sections}
         />
       </div>
 

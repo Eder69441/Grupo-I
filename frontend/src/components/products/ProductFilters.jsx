@@ -1,8 +1,4 @@
-import {
-  Search,
-  Filter,
-  CalendarClock,
-} from "lucide-react";
+import { Search, Filter, CalendarClock } from "lucide-react";
 
 export default function ProductFilters({
   search,
@@ -12,6 +8,9 @@ export default function ProductFilters({
   categories = [],
   expirationStatus,
   setExpirationStatus,
+  section,
+  onSectionChange,
+  sections,
 }) {
   return (
     <div className="rounded-xl border border-gray-200 bg-white p-4 shadow-sm">
@@ -71,20 +70,42 @@ export default function ProductFilters({
                 focus:ring-2 focus:ring-emerald-100
               "
             >
-              <option value="">
-                Todas las categorías
-              </option>
+              <option value="">Todas las categorías</option>
 
               {categories.map((item) => (
-                <option
-                  key={item._id || item.id}
-                  value={item.name}
-                >
+                <option key={item._id || item.id} value={item.name}>
                   {item.name}
                 </option>
               ))}
             </select>
           </div>
+        </div>
+
+        <div>
+          <label className="mb-2 block text-sm font-medium text-gray-700">
+            Tramo
+          </label>
+
+          <select
+            value={section}
+            onChange={(e) => onSectionChange(e.target.value)}
+            className="
+      w-full rounded-lg border border-gray-300
+      bg-white px-3 py-2.5
+      text-sm text-gray-700
+      outline-none transition
+      focus:border-emerald-500
+      focus:ring-2 focus:ring-emerald-100
+    "
+          >
+            <option value="">Todos los tramos</option>
+
+            {sections.map((item) => (
+              <option key={item} value={item}>
+                Tramo {item}
+              </option>
+            ))}
+          </select>
         </div>
 
         {/* Estado de vencimiento */}
@@ -101,9 +122,7 @@ export default function ProductFilters({
 
             <select
               value={expirationStatus}
-              onChange={(e) =>
-                setExpirationStatus(e.target.value)
-              }
+              onChange={(e) => setExpirationStatus(e.target.value)}
               className="
                 w-full appearance-none rounded-lg
                 border border-gray-300
@@ -114,21 +133,13 @@ export default function ProductFilters({
                 focus:ring-2 focus:ring-emerald-100
               "
             >
-              <option value="">
-                Todos los estados
-              </option>
+              <option value="">Todos los estados</option>
 
-              <option value="valid">
-                Vigentes
-              </option>
+              <option value="valid">Vigentes</option>
 
-              <option value="expiring">
-                Próximos a vencer
-              </option>
+              <option value="expiring">Próximos a vencer</option>
 
-              <option value="expired">
-                Vencidos
-              </option>
+              <option value="expired">Vencidos</option>
             </select>
           </div>
         </div>

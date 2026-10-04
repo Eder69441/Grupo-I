@@ -60,7 +60,7 @@ export default function StatCard({
         <div>
           <p className="text-sm font-medium text-gray-500">{title}</p>
 
-          <p className="mt-2 text-3xl font-bold tracking-tight text-gray-900">
+          <p className="mt-2 wrap-break-wordbreak-words text-2xl font-bold tracking-tight text-gray-900">
             {value}
           </p>
         </div>

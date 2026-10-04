@@ -1,5 +1,5 @@
 import { Link } from "react-router-dom";
-import { Pencil, CircleOff  } from "lucide-react";
+import { Pencil, CircleOff, MapPin } from "lucide-react";
 
 import StockBadge from "./StockBadge";
 import ExpirationBadge from "./ExpirationBadge";
@@ -22,6 +22,8 @@ export default function ProductTable({ products, onDelete, canManage }) {
               <th className="px-5 py-4">Precio</th>
 
               <th className="px-5 py-4">Stock</th>
+
+              <th className="px-5 py-4">Ubicación</th>
 
               <th className="px-5 py-4">Vencimiento</th>
 
@@ -61,6 +63,29 @@ export default function ProductTable({ products, onDelete, canManage }) {
 
                     <StockBadge stock={product.stock} />
                   </div>
+                </td>
+
+                {/* Ubicación */}
+                <td className="whitespace-nowrap px-5 py-4">
+                  {product.location ? (
+                    <div className="flex items-center gap-2">
+                      <div className="flex h-8 w-8 shrink-0 items-center justify-center rounded-lg bg-emerald-50 text-emerald-600">
+                        <MapPin size={16} />
+                      </div>
+
+                      <div>
+                        <p className="text-sm font-semibold text-gray-800">
+                          {`${product.location.section}-${product.location.shelf}-${product.location.level}`}
+                        </p>
+
+                        <p className="text-xs text-gray-500">
+                          {`Tramo ${product.location.section} · Estante ${product.location.shelf} · Nivel ${product.location.level}`}
+                        </p>
+                      </div>
+                    </div>
+                  ) : (
+                    <span className="text-sm text-gray-400">Sin ubicación</span>
+                  )}
                 </td>
 
                 {/* Vencimiento */}

@@ -63,6 +63,7 @@ await updateProduct(id, {
   category: formData.category,
   price: Number(formData.price),
   expirationDate: formData.expirationDate,
+  location: formData.location,
 });
 
       navigate("/products", {

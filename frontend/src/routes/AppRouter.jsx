@@ -9,6 +9,9 @@ import Movements from "../pages/Movements";
 import Users from "../pages/Users";
 import Categories from "../pages/Categories";
 import NotFound from "../pages/NotFound";
+import Locations from "../pages/Locations";
+import NewSale from "../pages/NewSale";
+import Sales from "../pages/Sales";
 
 import MainLayout from "../components/layout/MainLayout";
 
@@ -34,6 +37,10 @@ export default function AppRouter() {
 
             <Route path="products" element={<Products />} />
 
+            <Route path="sales" element={<Sales />} />
+
+            <Route path="sales/new" element={<NewSale />} />
+
             <Route path="movements" element={<Movements />} />
 
             {/* Rutas de administrador */}
@@ -43,6 +50,8 @@ export default function AppRouter() {
               <Route path="products/edit/:id" element={<EditProduct />} />
 
               <Route path="categories" element={<Categories />} />
+
+              <Route path="locations" element={<Locations />} />
 
               <Route path="users" element={<Users />} />
             </Route>

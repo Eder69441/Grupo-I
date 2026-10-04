@@ -14,7 +14,8 @@ router.get("/", protect, async (req, res) => {
   try {
     const products = await Product.find({
       active: { $ne: false },
-    }).sort({
+    }).populate("location")
+    .sort({
       createdAt: -1,
     });
 
@@ -31,7 +32,8 @@ router.get("/", protect, async (req, res) => {
 // Obtener un producto
 router.get("/:id", protect, async (req, res) => {
   try {
-    const product = await Product.findById(req.params.id);
+    const product = await Product.findById(req.params.id).populate("location");
+  
 
     if (!product) {
       return res.status(404).json({
@@ -54,7 +56,7 @@ router.post("/", protect, authorize("admin"), async (req, res) => {
   const session = await mongoose.startSession();
 
   try {
-    const { name, category, price, stock, expirationDate } = req.body;
+    const { name, category, price, stock, expirationDate, location } = req.body;
 
     const numericStock = Number(stock);
 
@@ -74,6 +76,7 @@ router.post("/", protect, authorize("admin"), async (req, res) => {
           price,
           stock: numericStock,
           expirationDate,
+          location,
         },
       ],
       {
@@ -121,7 +124,7 @@ router.post("/", protect, authorize("admin"), async (req, res) => {
 // Actualizar producto
 router.put("/:id", protect, authorize("admin"), async (req, res) => {
   try {
-    const { name, category, price, expirationDate } = req.body;
+    const { name, category, price, expirationDate, location } = req.body;
 
     const product = await Product.findByIdAndUpdate(
       req.params.id,
@@ -130,9 +133,10 @@ router.put("/:id", protect, authorize("admin"), async (req, res) => {
         category,
         price,
         expirationDate,
+        location,
       },
       {
-        new: true,
+        returnDocument: "after",
         runValidators: true,
       },
     );

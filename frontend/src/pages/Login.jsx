@@ -5,6 +5,8 @@ import { Eye, EyeOff, LockKeyhole, LogIn, Pill, UserRound } from "lucide-react";
 import useAuth from "../context/useAuth";
 import ErrorMessage from "../components/common/ErrorMessage";
 
+import pharmacyImage from "../assets/imagen-4.jpg";
+
 export default function Login() {
   const { login, isAuthenticated } = useAuth();
   const navigate = useNavigate();
@@ -41,37 +43,90 @@ export default function Login() {
     <div className="min-h-screen bg-gray-50">
       <div className="grid min-h-screen lg:grid-cols-2">
         {/* Panel izquierdo */}
-        <div className="hidden bg-emerald-600 lg:flex lg:flex-col lg:justify-between lg:p-12">
-          <div className="flex items-center gap-3 text-white">
-            <div className="flex h-11 w-11 items-center justify-center rounded-xl bg-white/15">
-              <Pill size={25} />
+        {/* Panel visual */}
+        <div className="relative hidden overflow-hidden lg:flex lg:min-h-screen">
+          {/* Imagen */}
+          <img
+            src={pharmacyImage}
+            alt="Interior de una farmacia"
+            className="absolute inset-0 h-full w-full object-cover"
+          />
+
+          {/* Capa oscura */}
+          <div className="absolute inset-0 bg-emerald-950/75" />
+
+          {/* Degradado */}
+          <div className="absolute inset-0 bg-linear-to-t from-emerald-950/80 via-transparent to-emerald-900/20" />
+
+          {/* Contenido */}
+          <div className="relative z-10 flex w-full flex-col justify-between p-12">
+            {/* Logo */}
+            <div className="flex items-center gap-3 text-white">
+              <div className="flex h-12 w-12 items-center justify-center rounded-xl bg-white/15 backdrop-blur-sm">
+                <Pill size={26} />
+              </div>
+
+              <div>
+                <h1 className="text-xl font-bold">Tu Pharmacy</h1>
+
+                <p className="text-sm text-emerald-100">Gestión farmacéutica</p>
+              </div>
             </div>
 
-            <div>
-              <h1 className="text-xl font-bold">Tu Pharmacy</h1>
+            {/* Mensaje */}
+            <div className="max-w-xl">
+              <div className="mb-5 inline-flex rounded-full border border-white/20 bg-white/10 px-4 py-2 text-sm font-medium text-emerald-50 backdrop-blur-sm">
+                Inventario · Ventas · Trazabilidad
+              </div>
 
-              <p className="text-sm text-emerald-100">Gestión de inventario</p>
+              <h2 className="text-4xl font-bold leading-tight text-white xl:text-5xl">
+                Gestiona tu farmacia desde un solo lugar.
+              </h2>
+
+              <p className="mt-5 max-w-lg text-base leading-7 text-emerald-50/90 xl:text-lg">
+                Controla medicamentos, existencias, ubicaciones, vencimientos y
+                ventas de manera simple y eficiente.
+              </p>
+
+              {/* Características */}
+              <div className="mt-8 grid max-w-lg grid-cols-3 gap-3">
+                <div className="rounded-xl border border-white/15 bg-white/10 p-3 backdrop-blur-sm">
+                  <p className="text-sm font-semibold text-white">Inventario</p>
+
+                  <p className="mt-1 text-xs text-emerald-100">
+                    Stock y alertas
+                  </p>
+                </div>
+
+                <div className="rounded-xl border border-white/15 bg-white/10 p-3 backdrop-blur-sm">
+                  <p className="text-sm font-semibold text-white">Ventas</p>
+
+                  <p className="mt-1 text-xs text-emerald-100">
+                    Control diario
+                  </p>
+                </div>
+
+                <div className="rounded-xl border border-white/15 bg-white/10 p-3 backdrop-blur-sm">
+                  <p className="text-sm font-semibold text-white">
+                    Ubicaciones
+                  </p>
+
+                  <p className="mt-1 text-xs text-emerald-100">
+                    Fácil localización
+                  </p>
+                </div>
+              </div>
             </div>
-          </div>
 
-          <div className="max-w-lg">
-            <h2 className="text-4xl font-bold leading-tight text-white">
-              Controla tu inventario de forma simple y eficiente.
-            </h2>
-
-            <p className="mt-5 text-lg leading-8 text-emerald-100">
-              Administra productos, categorías, existencias y fechas de
-              vencimiento desde un solo lugar.
+            {/* Pie */}
+            <p className="text-sm text-emerald-100/80">
+              Sistema de gestión farmacéutica
             </p>
           </div>
-
-          <p className="text-sm text-emerald-100">
-            Sistema de gestión farmacéutica
-          </p>
         </div>
 
         {/* Panel derecho */}
-        <div className="flex items-center justify-center px-4 py-10 sm:px-6 lg:px-12">
+        <div className="flex items-center justify-center bg-white px-4 py-10 sm:px-6 lg:px-12">
           <div className="w-full max-w-md">
             {/* Logo móvil */}
             <div className="mb-8 flex items-center justify-center gap-3 lg:hidden">
@@ -82,7 +137,7 @@ export default function Login() {
               <div>
                 <h1 className="text-xl font-bold text-gray-900">Tu Pharmacy</h1>
 
-                <p className="text-xs text-gray-500">Gestión de inventario</p>
+                <p className="text-xs text-gray-500">Gestión farmacéutica</p>
               </div>
             </div>
 
@@ -253,7 +308,7 @@ export default function Login() {
 
             {/* Pie */}
             <p className="mt-8 text-center text-xs text-gray-400">
-              Tu Pharmacy · Sistema de gestión de inventario
+               Tu Pharmacy · Sistema de gestión farmacéutica
             </p>
           </div>
         </div>

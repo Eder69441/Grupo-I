@@ -9,6 +9,8 @@ const userRoutes = require("./routes/userRoutes");
 const authRoutes = require("./routes/authRoutes");
 const categoryRoutes = require("./routes/categoryRoutes");
 const movementRoutes = require("./routes/movementRoutes");
+const locationRoutes = require("./routes/locationRoutes")
+const saleRoutes = require("./routes/saleRoutes");
 
 const app = express();
 
@@ -16,7 +18,7 @@ connectDB();
 
 const allowedOrigins = [
   "http://localhost:5173",
-  "http://localhost:10000",
+  "https://pharmacy-1-zom9.onrender.com",
 ];
 
 app.use(
@@ -39,6 +41,8 @@ app.use("/api/products", productRoutes);
 app.use("/api/users", userRoutes);
 app.use("/api/categories", categoryRoutes);
 app.use("/api/movements", movementRoutes);
+app.use("/api/locations", locationRoutes);
+app.use("/api/sales", saleRoutes);
 
 const PORT = process.env.PORT || 3000;
 

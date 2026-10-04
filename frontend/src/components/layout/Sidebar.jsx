@@ -9,6 +9,9 @@ import {
   LogOut,
   X,
   Pill,
+  MapPin,
+  ShoppingCart,
+  ReceiptText,
 } from "lucide-react";
 
 import useAuth from "../../context/useAuth";
@@ -93,6 +96,24 @@ export default function Sidebar({ isOpen, onClose }) {
             </NavLink>
           </div>
 
+          <div className="mt-8">
+            <p className="mb-3 px-3 text-xs font-semibold uppercase tracking-wider text-gray-400">
+              Ventas
+            </p>
+
+            <div className="space-y-1">
+              <NavLink to="/sales/new" onClick={onClose} className={linkClass}>
+                <ShoppingCart size={19} />
+                Nueva venta
+              </NavLink>
+
+              <NavLink to="/sales" end onClick={onClose} className={linkClass}>
+                <ReceiptText size={19} />
+                Historial
+              </NavLink>
+            </div>
+          </div>
+
           {/* Administración */}
           {user?.role === ROLES.ADMIN && (
             <div className="mt-8">
@@ -108,6 +129,15 @@ export default function Sidebar({ isOpen, onClose }) {
                 >
                   <Tags size={19} />
                   Categorías
+                </NavLink>
+
+                <NavLink
+                  to="/locations"
+                  onClick={onClose}
+                  className={linkClass}
+                >
+                  <MapPin size={19} />
+                  Ubicaciones
                 </NavLink>
 
                 <NavLink to="/users" onClick={onClose} className={linkClass}>
