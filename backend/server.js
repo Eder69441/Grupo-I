@@ -9,8 +9,9 @@ const userRoutes = require("./routes/userRoutes");
 const authRoutes = require("./routes/authRoutes");
 const categoryRoutes = require("./routes/categoryRoutes");
 const movementRoutes = require("./routes/movementRoutes");
-const locationRoutes = require("./routes/locationRoutes")
+const locationRoutes = require("./routes/locationRoutes");
 const saleRoutes = require("./routes/saleRoutes");
+const cashSessionRoutes = require("./routes/cashSessionRoutes");
 
 const app = express();
 
@@ -24,7 +25,7 @@ const allowedOrigins = [
 app.use(
   cors({
     origin: allowedOrigins,
-    methods: ["GET", "POST", "PUT", "DELETE", "OPTIONS"],
+    methods: ["GET", "POST", "PUT", "PATCH", "DELETE", "OPTIONS"],
     allowedHeaders: ["Content-Type", "Authorization"],
   }),
 );
@@ -43,6 +44,7 @@ app.use("/api/categories", categoryRoutes);
 app.use("/api/movements", movementRoutes);
 app.use("/api/locations", locationRoutes);
 app.use("/api/sales", saleRoutes);
+app.use("/api/cash-sessions", cashSessionRoutes);
 
 const PORT = process.env.PORT || 3000;
 

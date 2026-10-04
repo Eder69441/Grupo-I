@@ -66,12 +66,18 @@ const saleSchema = new mongoose.Schema(
       ref: "User",
       required: true,
     },
+    cashSession: {
+      type: mongoose.Schema.Types.ObjectId,
+      ref: "CashSession",
+      default: null,
+    },
 
     status: {
       type: String,
       enum: ["completed", "cancelled"],
       default: "completed",
     },
+
     paymentMethod: {
       type: String,
       enum: ["cash", "card", "transfer"],
