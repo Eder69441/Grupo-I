@@ -27,7 +27,9 @@ textarea {
   }
 
   .print-area,
-  .print-area * {
+  .print-area *,
+  .sale-receipt,
+  .sale-receipt * {
     visibility: visible;
   }
 
@@ -35,12 +37,33 @@ textarea {
     position: absolute;
     left: 0;
     top: 0;
+
     width: 100%;
+
     border: none;
     box-shadow: none;
   }
 
-  .no-print {
+  .sale-receipt {
+    position: absolute;
+    left: 0;
+    top: 0;
+
+    width: 80mm;
+    max-width: 80mm;
+
+    padding: 4mm;
+
+    background: white;
+    box-shadow: none;
+  }
+
+  .no-print,
+  .receipt-actions {
     display: none !important;
+  }
+
+  @page {
+    margin: 0;
   }
 }

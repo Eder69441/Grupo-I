@@ -9,35 +9,25 @@ import {
   ReceiptText,
   XCircle,
   RotateCcw,
+  Printer,
 } from "lucide-react";
 
 import { formatCurrency } from "../../utils/formatCurrency";
 import { formatDateTime } from "../../utils/formatDateTime";
 import ReturnForm from "../returns/ReturnForm";
+import SaleReceipt from "./SaleReceipt";
 
 import { createReturn, getReturnsBySale } from "../../services/returnService";
 
 export default function SaleDetail({ sale, onCancelSale, cancelling = false }) {
   const [showCancelConfirmation, setShowCancelConfirmation] = useState(false);
-
-  const [showReturnForm, setShowReturnForm] =
-  useState(false);
-
-const [previousReturns, setPreviousReturns] =
-  useState([]);
-
-const [loadingReturns, setLoadingReturns] =
-  useState(false);
-
-const [savingReturn, setSavingReturn] =
-  useState(false);
-
-const [returnError, setReturnError] =
-  useState("");
-
-const [returnSuccess, setReturnSuccess] =
-  useState("");
-
+  const [showReturnForm, setShowReturnForm] = useState(false);
+  const [previousReturns, setPreviousReturns] = useState([]);
+  const [loadingReturns, setLoadingReturns] = useState(false);
+  const [savingReturn, setSavingReturn] = useState(false);
+  const [returnError, setReturnError] = useState("");
+  const [returnSuccess, setReturnSuccess] = useState("");
+  const [showReceipt, setShowReceipt] = useState(false);
 
   if (!sale) {
     return null;
@@ -70,61 +60,58 @@ const [returnSuccess, setReturnSuccess] =
   };
 
   const handleOpenReturn = async () => {
-  try {
-    setLoadingReturns(true);
-    setReturnError("");
-    setReturnSuccess("");
+    try {
+      setLoadingReturns(true);
+      setReturnError("");
+      setReturnSuccess("");
 
-    const response =
-      await getReturnsBySale(sale._id);
+      const response = await getReturnsBySale(sale._id);
 
-    setPreviousReturns(response.data);
-    setShowReturnForm(true);
-  } catch (error) {
-    console.error(error);
+      setPreviousReturns(response.data);
+      setShowReturnForm(true);
+    } catch (error) {
+      console.error(error);
 
-    setReturnError(
-      error.response?.data?.message ||
-        "No se pudieron consultar las devoluciones anteriores.",
-    );
-  } finally {
-    setLoadingReturns(false);
-  }
-};
+      setReturnError(
+        error.response?.data?.message ||
+          "No se pudieron consultar las devoluciones anteriores.",
+      );
+    } finally {
+      setLoadingReturns(false);
+    }
+  };
 
-const handleCreateReturn = async (data) => {
-  try {
-    setSavingReturn(true);
-    setReturnError("");
-    setReturnSuccess("");
+  const handleCreateReturn = async (data) => {
+    try {
+      setSavingReturn(true);
+      setReturnError("");
+      setReturnSuccess("");
 
-    await createReturn(data);
+      await createReturn(data);
 
-    const response =
-      await getReturnsBySale(sale._id);
+      const response = await getReturnsBySale(sale._id);
 
-    setPreviousReturns(response.data);
+      setPreviousReturns(response.data);
 
-    setShowReturnForm(false);
+      setShowReturnForm(false);
 
-    setReturnSuccess(
-      "Devolución registrada correctamente. El inventario fue actualizado.",
-    );
+      setReturnSuccess(
+        "Devolución registrada correctamente. El inventario fue actualizado.",
+      );
 
-    return true;
-  } catch (error) {
-    console.error(error);
+      return true;
+    } catch (error) {
+      console.error(error);
 
-    setReturnError(
-      error.response?.data?.message ||
-        "No se pudo registrar la devolución.",
-    );
+      setReturnError(
+        error.response?.data?.message || "No se pudo registrar la devolución.",
+      );
 
-    return false;
-  } finally {
-    setSavingReturn(false);
-  }
-};
+      return false;
+    } finally {
+      setSavingReturn(false);
+    }
+  };
 
   return (
     <div>
@@ -199,6 +186,22 @@ const handleCreateReturn = async (data) => {
           </p>
         </div>
       </div>
+
+      <button
+        type="button"
+        onClick={() => setShowReceipt(true)}
+        className="
+    inline-flex items-center justify-center gap-2
+    rounded-lg border border-gray-300
+    bg-white px-4 py-2.5
+    text-sm font-semibold text-gray-700
+    transition
+    hover:bg-gray-50
+  "
+      >
+        <Printer size={17} />
+        Imprimir comprobante
+      </button>
 
       {/* Productos */}
       <div className="mt-6">
@@ -337,27 +340,27 @@ const handleCreateReturn = async (data) => {
           </div>
         </div>
       </div>
-{/* Devoluciones */}
-{!isCancelled && (
-  <div className="mt-6 border-t border-gray-200 pt-5">
-    {returnError && (
-      <div className="mb-4 rounded-lg border border-red-200 bg-red-50 px-4 py-3 text-sm text-red-700">
-        {returnError}
-      </div>
-    )}
+      {/* Devoluciones */}
+      {!isCancelled && (
+        <div className="mt-6 border-t border-gray-200 pt-5">
+          {returnError && (
+            <div className="mb-4 rounded-lg border border-red-200 bg-red-50 px-4 py-3 text-sm text-red-700">
+              {returnError}
+            </div>
+          )}
 
-    {returnSuccess && (
-      <div className="mb-4 rounded-lg border border-emerald-200 bg-emerald-50 px-4 py-3 text-sm font-medium text-emerald-700">
-        {returnSuccess}
-      </div>
-    )}
+          {returnSuccess && (
+            <div className="mb-4 rounded-lg border border-emerald-200 bg-emerald-50 px-4 py-3 text-sm font-medium text-emerald-700">
+              {returnSuccess}
+            </div>
+          )}
 
-    {!showReturnForm ? (
-      <button
-        type="button"
-        onClick={handleOpenReturn}
-        disabled={loadingReturns}
-        className="
+          {!showReturnForm ? (
+            <button
+              type="button"
+              onClick={handleOpenReturn}
+              disabled={loadingReturns}
+              className="
           inline-flex w-full items-center
           justify-center gap-2
           rounded-lg border border-emerald-200
@@ -369,33 +372,24 @@ const handleCreateReturn = async (data) => {
           disabled:cursor-not-allowed
           disabled:opacity-50
         "
-      >
-        <RotateCcw size={18} />
+            >
+              <RotateCcw size={18} />
 
-        {loadingReturns
-          ? "Consultando..."
-          : "Registrar devolución"}
-      </button>
-    ) : (
-      <div className="rounded-xl border border-gray-200 bg-gray-50/50 p-4">
-        <ReturnForm
-          sale={sale}
-          previousReturns={
-            previousReturns
-          }
-          onSubmit={
-            handleCreateReturn
-          }
-          onCancel={() =>
-            setShowReturnForm(false)
-          }
-          loading={savingReturn}
-        />
-      </div>
-    )}
-  </div>
-)}
-      
+              {loadingReturns ? "Consultando..." : "Registrar devolución"}
+            </button>
+          ) : (
+            <div className="rounded-xl border border-gray-200 bg-gray-50/50 p-4">
+              <ReturnForm
+                sale={sale}
+                previousReturns={previousReturns}
+                onSubmit={handleCreateReturn}
+                onCancel={() => setShowReturnForm(false)}
+                loading={savingReturn}
+              />
+            </div>
+          )}
+        </div>
+      )}
 
       {/* Anular venta */}
       {!isCancelled && !isCashSessionClosed && (
@@ -501,6 +495,30 @@ const handleCreateReturn = async (data) => {
                 operación debe registrarse como devolución o reembolso.
               </p>
             </div>
+          </div>
+        </div>
+      )}
+
+      {showReceipt && (
+        <div
+          className="
+      fixed inset-0 z-200
+      flex items-start justify-center
+      overflow-y-auto
+      bg-black/50
+      p-4 sm:p-8
+    "
+          onClick={() => setShowReceipt(false)}
+        >
+          <div
+            className="
+        w-full max-w-sm
+        rounded-2xl bg-white
+        p-6 shadow-2xl
+      "
+            onClick={(event) => event.stopPropagation()}
+          >
+            <SaleReceipt sale={sale} onClose={() => setShowReceipt(false)} />
           </div>
         </div>
       )}

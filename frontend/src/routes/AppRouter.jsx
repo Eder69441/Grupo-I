@@ -13,6 +13,8 @@ import Locations from "../pages/Locations";
 import NewSale from "../pages/NewSale";
 import Sales from "../pages/Sales";
 import Cash from "../pages/Cash";
+import Returns from "../pages/Returns";
+import Settings from "../pages/Settings";
 
 import MainLayout from "../components/layout/MainLayout";
 
@@ -37,26 +39,21 @@ export default function AppRouter() {
             <Route index element={<Dashboard />} />
 
             <Route path="products" element={<Products />} />
-
             <Route path="sales" element={<Sales />} />
-
+            <Route path="/returns" element={<Returns />} />
             <Route path="sales/new" element={<NewSale />} />
-
             <Route path="movements" element={<Movements />} />
-
-            <Route path="/cash" element={<Cash />}/>
+            <Route path="/cash" element={<Cash />} />
 
             {/* Rutas de administrador */}
             <Route element={<RoleRoute roles={[ROLES.ADMIN]} />}>
               <Route path="products/new" element={<AddProduct />} />
-
               <Route path="products/edit/:id" element={<EditProduct />} />
-
               <Route path="categories" element={<Categories />} />
-
               <Route path="locations" element={<Locations />} />
-
               <Route path="users" element={<Users />} />
+              <Route path="/settings" element={<Settings />}/>
+              
             </Route>
           </Route>
         </Route>

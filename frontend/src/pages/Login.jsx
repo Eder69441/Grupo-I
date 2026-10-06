@@ -3,6 +3,7 @@ import { Navigate, useNavigate } from "react-router-dom";
 import { Eye, EyeOff, LockKeyhole, LogIn, Pill, UserRound } from "lucide-react";
 
 import useAuth from "../context/useAuth";
+import useSettings from "../context/useSettings";
 import ErrorMessage from "../components/common/ErrorMessage";
 
 import pharmacyImage from "../assets/imagen-4.jpg";
@@ -17,6 +18,8 @@ export default function Login() {
 
   const [error, setError] = useState("");
   const [loading, setLoading] = useState(false);
+
+  const { settings } = useSettings();
 
   if (isAuthenticated) {
     return <Navigate to="/" replace />;
@@ -67,7 +70,7 @@ export default function Login() {
               </div>
 
               <div>
-                <h1 className="text-xl font-bold">Tu Pharmacy</h1>
+                <h1 className="text-xl font-bold">{settings.pharmacyName}</h1>
 
                 <p className="text-sm text-emerald-100">Gestión farmacéutica</p>
               </div>
@@ -135,7 +138,7 @@ export default function Login() {
               </div>
 
               <div>
-                <h1 className="text-xl font-bold text-gray-900">Tu Pharmacy</h1>
+                <h1 className="text-xl font-bold text-gray-900">{settings.pharmacyName}</h1>
 
                 <p className="text-xs text-gray-500">Gestión farmacéutica</p>
               </div>
@@ -308,7 +311,7 @@ export default function Login() {
 
             {/* Pie */}
             <p className="mt-8 text-center text-xs text-gray-400">
-               Tu Pharmacy · Sistema de gestión farmacéutica
+               {settings.pharmacyName} · Sistema de gestión farmacéutica
             </p>
           </div>
         </div>

@@ -13,13 +13,17 @@ import {
   ShoppingCart,
   ReceiptText,
   Landmark,
+  RotateCcw,
+  Settings,
 } from "lucide-react";
 
 import useAuth from "../../context/useAuth";
 import { ROLES, ROLE_LABELS } from "../../constants/roles";
+import useSettings from "../../context/useSettings";
 
 export default function Sidebar({ isOpen, onClose }) {
   const { user, logout } = useAuth();
+  const { settings } = useSettings();
 
   const linkClass = ({ isActive }) =>
     `
@@ -59,9 +63,11 @@ export default function Sidebar({ isOpen, onClose }) {
             </div>
 
             <div>
-              <h1 className="text-lg font-bold text-gray-900">Tu Pharmacy</h1>
+              <p className="max-w-40 truncate font-bold text-gray-900">
+                {settings.pharmacyName}
+              </p>
 
-              <p className="text-xs text-gray-500">Gestión Farmacéutica</p>
+              <p className="text-xs text-gray-500">Gestión farmacéutica</p>
             </div>
           </div>
 
@@ -113,7 +119,11 @@ export default function Sidebar({ isOpen, onClose }) {
                 Historial
               </NavLink>
 
-              {/* Caja */}
+              <NavLink to="/returns" onClick={onClose} className={linkClass}>
+                <RotateCcw size={19} />
+                Devoluciones
+              </NavLink>
+
               <NavLink to="/cash" onClick={onClose} className={linkClass}>
                 <Landmark size={19} />
                 Caja
@@ -150,6 +160,10 @@ export default function Sidebar({ isOpen, onClose }) {
                 <NavLink to="/users" onClick={onClose} className={linkClass}>
                   <Users size={19} />
                   Usuarios
+                </NavLink>
+                <NavLink to="/settings" onClick={onClose} className={linkClass}>
+                  <Settings size={19} />
+                  Configuración
                 </NavLink>
               </div>
             </div>

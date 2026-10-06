@@ -13,6 +13,8 @@ const locationRoutes = require("./routes/locationRoutes");
 const saleRoutes = require("./routes/saleRoutes");
 const cashSessionRoutes = require("./routes/cashSessionRoutes");
 const returnRoutes = require("./routes/returnRoutes");
+const pharmacySettingsRoutes =
+  require("./routes/pharmacySettingsRoutes");
 
 const app = express();
 
@@ -47,6 +49,10 @@ app.use("/api/locations", locationRoutes);
 app.use("/api/sales", saleRoutes);
 app.use("/api/returns", returnRoutes);
 app.use("/api/cash-sessions", cashSessionRoutes);
+app.use(
+  "/api/settings",
+  pharmacySettingsRoutes,
+);
 
 const PORT = process.env.PORT || 3000;
 
