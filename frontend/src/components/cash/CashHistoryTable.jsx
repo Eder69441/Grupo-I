@@ -1,9 +1,10 @@
 import { CheckCircle2, CircleMinus, CirclePlus, Eye } from "lucide-react";
 
-import { formatCurrency } from "../../utils/formatCurrency";
+import useCurrency from "../../hooks/useCurrency";
 import { formatDateTime } from "../../utils/formatDateTime";
 
 export default function CashHistoryTable({ sessions, onView }) {
+ const { formatCurrency } = useCurrency();
   if (!sessions.length) {
     return (
       <div className="rounded-xl border border-gray-200 bg-white p-8 text-center text-sm text-gray-500">
@@ -18,33 +19,13 @@ export default function CashHistoryTable({ sessions, onView }) {
         <table className="min-w-full divide-y divide-gray-200">
           <thead className="bg-gray-50">
             <tr>
-              <th className="px-4 py-3 text-left text-xs font-semibold uppercase text-gray-500">
-                Caja
-              </th>
-
-              <th className="px-4 py-3 text-left text-xs font-semibold uppercase text-gray-500">
-                Apertura
-              </th>
-
-              <th className="px-4 py-3 text-left text-xs font-semibold uppercase text-gray-500">
-                Fondo inicial
-              </th>
-
-              <th className="px-4 py-3 text-left text-xs font-semibold uppercase text-gray-500">
-                Ventas
-              </th>
-
-              <th className="px-4 py-3 text-left text-xs font-semibold uppercase text-gray-500">
-                Diferencia
-              </th>
-
-              <th className="px-4 py-3 text-left text-xs font-semibold uppercase text-gray-500">
-                Estado
-              </th>
-
-              <th className="px-4 py-3 text-right text-xs font-semibold uppercase text-gray-500">
-                Detalle
-              </th>
+              <th className="px-4 py-3 text-left text-xs font-semibold uppercase text-gray-500">Caja</th>
+              <th className="px-4 py-3 text-left text-xs font-semibold uppercase text-gray-500">Apertura</th>
+              <th className="px-4 py-3 text-left text-xs font-semibold uppercase text-gray-500">Fondo inicial</th>
+              <th className="px-4 py-3 text-left text-xs font-semibold uppercase text-gray-500">Ventas</th>
+              <th className="px-4 py-3 text-left text-xs font-semibold uppercase text-gray-500">Diferencia</th>
+              <th className="px-4 py-3 text-left text-xs font-semibold uppercase text-gray-500">Estado</th>
+              <th className="px-4 py-3 text-right text-xs font-semibold uppercase text-gray-500">Detalle</th>
             </tr>
           </thead>
 

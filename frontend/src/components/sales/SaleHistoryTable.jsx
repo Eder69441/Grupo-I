@@ -1,9 +1,11 @@
 import { CheckCircle2, ReceiptText, XCircle } from "lucide-react";
 
-import { formatCurrency } from "../../utils/formatCurrency";
+import useCurrency from "../../hooks/useCurrency";
 import { formatDateTime } from "../../utils/formatDateTime";
 
 export default function SaleHistoryTable({ sales, onViewSale }) {
+  const { formatCurrency } = useCurrency();
+  
   const paymentMethodLabels = {
     cash: "Efectivo",
     card: "Tarjeta",

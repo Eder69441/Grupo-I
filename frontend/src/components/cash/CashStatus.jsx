@@ -5,7 +5,7 @@ import {
   LockKeyhole,
 } from "lucide-react";
 
-import { formatCurrency } from "../../utils/formatCurrency";
+import useCurrency from "../../hooks/useCurrency";
 import { formatDateTime } from "../../utils/formatDateTime";
 
 export default function CashStatus({ cashSession }) {

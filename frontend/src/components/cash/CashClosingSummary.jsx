@@ -10,10 +10,12 @@ import {
   X,
 } from "lucide-react";
 
-import { formatCurrency } from "../../utils/formatCurrency";
+import  useCurrency  from "../../hooks/useCurrency";
 import { formatDateTime } from "../../utils/formatDateTime";
 
 export default function CashClosingSummary({ session, onClose }) {
+  const { formatCurrency } = useCurrency();
+
   if (!session) {
     return null;
   }

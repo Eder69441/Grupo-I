@@ -200,36 +200,25 @@ export default function SettingsForm({
       <section className="rounded-xl border border-gray-200 bg-white p-5 shadow-sm">
         <h2 className="font-semibold text-gray-900">Moneda</h2>
 
-        <div className="mt-5 grid gap-5 sm:grid-cols-2">
-          <div>
-            <label className="mb-1.5 block text-sm font-medium text-gray-700">
-              Moneda
-            </label>
+        <p className="mt-1 text-sm text-gray-500">
+          Moneda utilizada para mostrar los importes del sistema.
+        </p>
 
-            <select
-              name="currency"
-              value={form.currency}
-              onChange={handleChange}
-              className={inputClass}
-            >
-              <option value="DOP">Peso dominicano (DOP)</option>
-              <option value="USD">Dólar estadounidense (USD)</option>
-            </select>
-          </div>
+        <div className="mt-5 max-w-md">
+          <label className="mb-1.5 block text-sm font-medium text-gray-700">
+            Moneda principal
+          </label>
 
-          <div>
-            <label className="mb-1.5 block text-sm font-medium text-gray-700">
-              Símbolo
-            </label>
+          <select
+            name="currency"
+            value={form.currency}
+            onChange={handleChange}
+            className={inputClass}
+          >
+            <option value="DOP">Peso dominicano (DOP)</option>
 
-            <input
-              name="currencySymbol"
-              value={form.currencySymbol}
-              onChange={handleChange}
-              maxLength={5}
-              className={inputClass}
-            />
-          </div>
+            <option value="USD">Dólar estadounidense (USD)</option>
+          </select>
         </div>
       </section>
 

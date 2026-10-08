@@ -6,7 +6,7 @@ import {
   WalletCards,
 } from "lucide-react";
 
-import { formatCurrency } from "../../utils/formatCurrency";
+import useCurrency from "../../hooks/useCurrency";
 import { formatDateTime } from "../../utils/formatDateTime";
 
 const refundMethodLabels = {
@@ -22,6 +22,8 @@ const refundMethodIcons = {
 };
 
 export default function ReturnDetail({ returnRecord }) {
+const { formatCurrency } = useCurrency();
+
   if (!returnRecord) {
     return null;
   }

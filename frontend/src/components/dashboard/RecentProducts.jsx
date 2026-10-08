@@ -1,10 +1,11 @@
 import { Link } from "react-router-dom";
 
-import { formatCurrency } from "../../utils/formatCurrency";
+import useCurrency from "../../hooks/useCurrency";
 import { formatDate } from "../../utils/formatDate";
 
 export default function RecentProducts({ products }) {
 const recentProducts = [...products].slice(0, 5);
+const { formatCurrency } = useCurrency();
 
   return (
     <div className="mt-6 overflow-hidden rounded-xl border bg-white shadow-sm">

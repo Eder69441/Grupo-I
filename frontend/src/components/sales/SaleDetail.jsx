@@ -12,7 +12,7 @@ import {
   Printer,
 } from "lucide-react";
 
-import { formatCurrency } from "../../utils/formatCurrency";
+import useCurrency from "../../hooks/useCurrency";
 import { formatDateTime } from "../../utils/formatDateTime";
 import ReturnForm from "../returns/ReturnForm";
 import SaleReceipt from "./SaleReceipt";
@@ -28,6 +28,7 @@ export default function SaleDetail({ sale, onCancelSale, cancelling = false }) {
   const [returnError, setReturnError] = useState("");
   const [returnSuccess, setReturnSuccess] = useState("");
   const [showReceipt, setShowReceipt] = useState(false);
+  const { formatCurrency } = useCurrency();
 
   if (!sale) {
     return null;

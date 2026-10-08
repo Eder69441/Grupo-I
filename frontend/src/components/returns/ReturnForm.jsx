@@ -2,7 +2,7 @@ import { useMemo, useState } from "react";
 
 import { AlertTriangle, RotateCcw } from "lucide-react";
 
-import { formatCurrency } from "../../utils/formatCurrency";
+import useCurrency from "../../hooks/useCurrency";
 
 export default function ReturnForm({
   sale,
@@ -12,9 +12,7 @@ export default function ReturnForm({
   loading = false,
 }) {
   const [quantities, setQuantities] = useState({});
-
   const [reason, setReason] = useState("");
-
   const [refundMethod, setRefundMethod] = useState(
     sale.paymentMethod || "cash",
   );
@@ -24,6 +22,8 @@ export default function ReturnForm({
   card: "Tarjeta",
   transfer: "Transferencia",
 };
+
+const { formatCurrency } = useCurrency();
 
 const refundMethodChanged =
   refundMethod !== sale.paymentMethod;

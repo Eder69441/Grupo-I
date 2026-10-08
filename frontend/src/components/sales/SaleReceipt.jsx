@@ -1,6 +1,6 @@
 import { Banknote, CreditCard, Printer, WalletCards } from "lucide-react";
 
-import { formatCurrency } from "../../utils/formatCurrency";
+import useCurrency from "../../hooks/useCurrency";
 import { formatDateTime } from "../../utils/formatDateTime";
 
 import useSettings from "../../context/useSettings";
@@ -19,6 +19,7 @@ const paymentIcons = {
 
 export default function SaleReceipt({ sale, onClose }) {
 const { settings } = useSettings();
+const { formatCurrency } = useCurrency();
 
   if (!sale) {
     return null;

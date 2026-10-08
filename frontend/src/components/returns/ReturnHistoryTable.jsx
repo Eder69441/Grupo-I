@@ -1,6 +1,6 @@
 import { Eye, RotateCcw } from "lucide-react";
 
-import { formatCurrency } from "../../utils/formatCurrency";
+import useCurrency from "../../hooks/useCurrency";
 import { formatDateTime } from "../../utils/formatDateTime";
 
 const refundMethodLabels = {
@@ -10,6 +10,8 @@ const refundMethodLabels = {
 };
 
 export default function ReturnHistoryTable({ returns, onView }) {
+const { formatCurrency } = useCurrency();
+
   if (!returns.length) {
     return (
       <div className="rounded-xl border border-gray-200 bg-white px-6 py-12 text-center">

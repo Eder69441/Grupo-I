@@ -7,7 +7,7 @@ import {
   RotateCcw,
 } from "lucide-react";
 
-import { formatCurrency } from "../../utils/formatCurrency";
+import useCurrency from "../../hooks/useCurrency";
 
 export default function CashSummary({ summary }) {
   if (!summary) {

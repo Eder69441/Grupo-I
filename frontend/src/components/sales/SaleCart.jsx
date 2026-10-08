@@ -7,7 +7,7 @@ import {
   Trash2,
 } from "lucide-react";
 
-import { formatCurrency } from "../../utils/formatCurrency";
+import useCurrency from "../../hooks/useCurrency";
 
 export default function SaleCart({
   items,
@@ -26,6 +26,7 @@ export default function SaleCart({
   insufficientCash,
 }) {
   const numericAmountReceived = Number(amountReceived) || 0;
+  const { formatCurrency } = useCurrency();
 
   return (
     <div className="self-start rounded-xl border border-gray-200 bg-white shadow-sm">

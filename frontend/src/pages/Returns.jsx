@@ -7,20 +7,16 @@ import ReturnHistoryTable from "../components/returns/ReturnHistoryTable";
 import ReturnDetail from "../components/returns/ReturnDetail";
 
 import { getReturns } from "../services/returnService";
-import { formatCurrency } from "../utils/formatCurrency";
+import useCurrency from "../hooks/useCurrency";
 
 export default function Returns() {
   const [returns, setReturns] = useState([]);
-
   const [selectedReturn, setSelectedReturn] = useState(null);
-
   const [search, setSearch] = useState("");
-
   const [refundMethod, setRefundMethod] = useState("all");
-
   const [loading, setLoading] = useState(true);
-
   const [error, setError] = useState("");
+  const { formatCurrency } = useCurrency();
 
   useEffect(() => {
     const loadReturns = async () => {

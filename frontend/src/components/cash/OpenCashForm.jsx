@@ -2,7 +2,7 @@ import { useState } from "react";
 
 import { Banknote, LockOpen } from "lucide-react";
 
-import { formatCurrency } from "../../utils/formatCurrency";
+import useCurrency from "../../hooks/useCurrency";
 
 export default function OpenCashForm({ onOpen, loading = false }) {
   const [openingAmount, setOpeningAmount] = useState("");

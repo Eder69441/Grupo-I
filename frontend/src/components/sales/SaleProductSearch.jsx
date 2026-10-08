@@ -1,6 +1,6 @@
 import { Search, Plus, MapPin } from "lucide-react";
 
-import { formatCurrency } from "../../utils/formatCurrency";
+import useCurrency from "../../hooks/useCurrency";
 
 export default function SaleProductSearch({
   products,
@@ -9,6 +9,7 @@ export default function SaleProductSearch({
   onAddProduct,
 }) {
   const normalizedSearch = search.trim().toLowerCase();
+  const { formatCurrency } = useCurrency();
 
   const filteredProducts = products
     .filter((product) => product.stock > 0)

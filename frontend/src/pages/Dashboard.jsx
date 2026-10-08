@@ -26,7 +26,7 @@ import { getProducts } from "../services/productService";
 import { getSales } from "../services/saleService";
 
 import { getDaysUntilExpiration } from "../utils/expiration";
-import { formatCurrency } from "../utils/formatCurrency";
+import useCurrency from "../hooks/useCurrency";
 
 import {
   LOW_STOCK_LIMIT,
@@ -39,6 +39,7 @@ export default function Dashboard() {
 
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState("");
+  const { formatCurrency } = useCurrency();
 
   useEffect(() => {
     const loadDashboard = async () => {

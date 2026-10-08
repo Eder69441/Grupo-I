@@ -4,10 +4,12 @@ import { Pencil, CircleOff, MapPin } from "lucide-react";
 import StockBadge from "./StockBadge";
 import ExpirationBadge from "./ExpirationBadge";
 
-import { formatCurrency } from "../../utils/formatCurrency";
+import useCurrency from "../../hooks/useCurrency";
 import { formatDate } from "../../utils/formatDate";
 
 export default function ProductTable({ products, onDelete, canManage }) {
+const { formatCurrency } = useCurrency();
+
   return (
     <div className="overflow-hidden rounded-xl border border-gray-200 bg-white shadow-sm">
       <div className="overflow-x-auto">
