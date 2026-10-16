@@ -15,12 +15,13 @@ const { getCartHash, toCents } = require("../utils/paymentCart");
 
 const router = express.Router();
 
-async function allocateFEFO(productId, quantity, session) {
+async function allocateFEFO(productId, quantity, branchId session) {
   const today = new Date();
   today.setUTCHours(0, 0, 0, 0);
 
   const batches = await Batch.find({
     product: productId,
+    branch: branchId,
     active: true,
     stock: { $gt: 0 },
     expirationDate: { $gte: today },
