@@ -10,6 +10,7 @@ const CashSession = require("../models/CashSession");
 const Batch = require("../models/Batch");
 const PaymentTransaction = require("../models/PaymentTransaction");
 const Return = require("../models/Return");
+const requireBranch = require("../middleware/branchMiddleware");
 
 const { getCartHash, toCents } = require("../utils/paymentCart");
 
@@ -74,7 +75,7 @@ router.get("/", protect, async (req, res) => {
 });
 
 // REGISTRAR UNA VENTA
-router.post("/", protect, async (req, res) => {
+router.post("/", protect, requireBranch, async (req, res) => {
   const session = await mongoose.startSession();
 
   try {
@@ -90,8 +91,9 @@ router.post("/", protect, async (req, res) => {
     session.startTransaction();
 
     const cashSession = await CashSession.findOne({
-      status: "open",
-    }).session(session);
+  branch: req.branchId,
+  status: "open",
+}).session(session);
 
     if (!cashSession) {
       const error = new Error(
@@ -144,7 +146,7 @@ router.post("/", protect, async (req, res) => {
       }
 
       // Asignar automáticamente los lotes.
-      const allocations = await allocateFEFO(product._id, quantity, session);
+      const allocations = await allocateFEFO(product._id, quantity, req.branchId, session,);
       const previousStock = product.stock;
       const subtotal = product.price * quantity;
 
@@ -160,14 +162,16 @@ router.post("/", protect, async (req, res) => {
         const newRunningStock = runningStock - allocation.quantity;
 
         movements.push({
-          product: product._id,
-          batch: batch._id,
-          type: "salida",
-          quantity: allocation.quantity,
-          previousStock: runningStock,
-          newStock: newRunningStock,
-          user: req.user.id,
-        });
+  product: product._id,
+  branch: req.branchId,
+  batch: batch._id,
+  type: "salida",
+  origin: "venta",
+  quantity: allocation.quantity,
+  previousStock: runningStock,
+  newStock: newRunningStock,
+  user: req.user.id,
+});
 
         runningStock = newRunningStock;
       }
@@ -262,24 +266,23 @@ router.post("/", protect, async (req, res) => {
     // CREAR VENTA
     const saleNumber = `V-${Date.now()}`;
 
-    const [sale] = await Sale.create(
-      [
-        {
-          saleNumber,
-          items: saleItems,
-          total,
-          user: req.user.id,
-          cashSession: cashSession._id,
-          paymentMethod,
-          amountReceived: finalAmountReceived,
-          change,
-          paymentTransaction: authorizedPayment?._id || null,
-        },
-      ],
-      {
-        session,
-      },
-    );
+const [sale] = await Sale.create(
+  [
+    {
+      saleNumber,
+      branch: req.branchId,
+      items: saleItems,
+      total,
+      user: req.user.id,
+      cashSession: cashSession._id,
+      paymentMethod,
+      amountReceived: finalAmountReceived,
+      change,
+      paymentTransaction: authorizedPayment?._id || null,
+    },
+  ],
+  { session },
+);
 
     // REGISTRAR SALIDAS POR LOTE EN KARDEX
     for (const movement of movements) {
@@ -422,6 +425,14 @@ router.patch("/:id/cancel", protect, async (req, res) => {
       }
     }
 
+    const existingReturn = await Return.exists({
+  sale: sale._id,
+}).session(session);
+
+if (existingReturn) {
+  throw new Error("SALE_HAS_RETURNS");
+}
+
     // DEVOLVER PRODUCTOS A SUS LOTES ORIGINALES
     for (const item of sale.items) {
       const product = await Product.findById(item.product).session(session);
@@ -510,15 +521,17 @@ router.patch("/:id/cancel", protect, async (req, res) => {
     if (session.inTransaction()) {
       await session.abortTransaction();
 
-      if (error.message === "SALE_HAS_RETURNS") {
+      }
+    
+    }
+
+    console.error("Error al anular venta:", error);
+
+    if (error.message === "SALE_HAS_RETURNS") {
         return res.status(409).json({
           message:
             "Esta venta tiene devoluciones registradas y no puede anularse.",
         });
-      }
-    }
-
-    console.error("Error al anular venta:", error);
 
     if (error.message === "SALE_NOT_FOUND") {
       return res.status(404).json({
@@ -527,14 +540,6 @@ router.patch("/:id/cancel", protect, async (req, res) => {
     }
 
     // Impedir anular ventas que ya tienen devoluciones.
-    const existingReturn = await Return.exists({
-      sale: sale._id,
-    }).session(session);
-
-    if (existingReturn) {
-      throw new Error("SALE_HAS_RETURNS");
-    }
-
     if (error.message === "SALE_ALREADY_CANCELLED") {
       return res.status(400).json({
         message: "La venta ya fue anulada.",
