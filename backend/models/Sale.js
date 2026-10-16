@@ -73,6 +73,13 @@ const saleSchema = new mongoose.Schema(
       trim: true,
     },
 
+    branch: {
+  type: mongoose.Schema.Types.ObjectId,
+  ref: "Branch",
+  required: true,
+  index: true,
+},
+
     items: {
       type: [saleItemSchema],
       required: true,
