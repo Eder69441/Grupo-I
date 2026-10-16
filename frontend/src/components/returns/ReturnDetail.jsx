@@ -22,13 +22,25 @@ const refundMethodIcons = {
 };
 
 export default function ReturnDetail({ returnRecord }) {
-const { formatCurrency } = useCurrency();
+  const { formatCurrency } = useCurrency();
 
   if (!returnRecord) {
     return null;
   }
 
   const RefundIcon = refundMethodIcons[returnRecord.refundMethod] || RotateCcw;
+
+  const getRestockLabel = (item) => {
+    if (item.restock === true) {
+      return "Reincorporado";
+    }
+
+    if (item.restock === false) {
+      return "No reincorporado";
+    }
+
+    return "Registro anterior";
+  };
 
   return (
     <div className="space-y-6">
@@ -90,21 +102,46 @@ const { formatCurrency } = useCurrency();
               <thead className="bg-gray-50">
                 <tr className="text-xs font-semibold uppercase text-gray-500">
                   <th className="px-4 py-3">Producto</th>
-
                   <th className="px-4 py-3 text-center">Cant.</th>
-
                   <th className="px-4 py-3 text-right">Precio</th>
-
                   <th className="px-4 py-3 text-right">Subtotal</th>
+                  <th className="px-4 py-3 text-center">Inventario</th>
                 </tr>
               </thead>
 
               <tbody className="divide-y divide-gray-100">
                 {returnRecord.items.map((item, index) => (
                   <tr key={`${item.product}-${index}`}>
-                    <td className="px-4 py-3 text-sm font-medium text-gray-900">
-                      {item.productName}
+                    <td className="px-4 py-3 text-center">
+                      <span
+                        className={`inline-flex rounded-full px-2.5 py-1 text-xs font-semibold ${
+                          item.restock === true
+                            ? "bg-emerald-50 text-emerald-700"
+                            : item.restock === false
+                              ? "bg-amber-50 text-amber-700"
+                              : "bg-gray-100 text-gray-600"
+                        }`}
+                      >
+                        {getRestockLabel(item)}
+                      </span>
                     </td>
+
+                    {item.returnedBatches?.length > 0 && (
+                      <div className="mt-2 space-y-1">
+                        {item.returnedBatches.map((allocation) => (
+                          <p
+                            key={allocation.batch?._id || allocation.batch}
+                            className="text-xs text-gray-500"
+                          >
+                            Lote:{" "}
+                            {allocation.batch?.batchNumber ||
+                              String(allocation.batch?._id || allocation.batch)}
+                            {" · "}
+                            {allocation.quantity} unidad(es)
+                          </p>
+                        ))}
+                      </div>
+                    )}
 
                     <td className="px-4 py-3 text-center text-sm text-gray-600">
                       {item.quantity}

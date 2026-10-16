@@ -49,7 +49,6 @@ export default function SaleDetail({ sale, onCancelSale, cancelling = false }) {
     paymentMethodLabels[sale.paymentMethod] || "No especificado";
 
   const isCancelled = sale.status === "cancelled";
-
   const isCashSessionClosed = sale.cashSession?.status === "closed";
 
   const handleConfirmCancellation = async () => {
@@ -97,9 +96,10 @@ export default function SaleDetail({ sale, onCancelSale, cancelling = false }) {
       setShowReturnForm(false);
 
       setReturnSuccess(
-        "Devolución registrada correctamente. El inventario fue actualizado.",
+        data.items.some((item) => item.restock)
+          ? "Devolución registrada. Inventario actualizado."
+          : "Devolución registrada. Inventario sin cambios.",
       );
-
       return true;
     } catch (error) {
       console.error(error);
@@ -192,13 +192,12 @@ export default function SaleDetail({ sale, onCancelSale, cancelling = false }) {
         type="button"
         onClick={() => setShowReceipt(true)}
         className="
-    inline-flex items-center justify-center gap-2
-    rounded-lg border border-gray-300
-    bg-white px-4 py-2.5
-    text-sm font-semibold text-gray-700
-    transition
-    hover:bg-gray-50
-  "
+          inline-flex items-center justify-center gap-2
+          rounded-lg border border-gray-300
+        bg-white px-4 py-2.5
+          text-sm font-semibold text-gray-700
+          transition
+        hover:bg-gray-50"
       >
         <Printer size={17} />
         Imprimir comprobante
@@ -225,11 +224,8 @@ export default function SaleDetail({ sale, onCancelSale, cancelling = false }) {
               <thead className="bg-gray-50">
                 <tr className="text-xs font-semibold uppercase text-gray-500">
                   <th className="px-4 py-3">Producto</th>
-
                   <th className="px-4 py-3 text-center">Cant.</th>
-
                   <th className="px-4 py-3 text-right">Precio</th>
-
                   <th className="px-4 py-3 text-right">Subtotal</th>
                 </tr>
               </thead>
@@ -362,17 +358,16 @@ export default function SaleDetail({ sale, onCancelSale, cancelling = false }) {
               onClick={handleOpenReturn}
               disabled={loadingReturns}
               className="
-          inline-flex w-full items-center
-          justify-center gap-2
-          rounded-lg border border-emerald-200
-          bg-white px-4 py-2.5
-          text-sm font-semibold
-          text-emerald-700
-          transition
-          hover:bg-emerald-50
-          disabled:cursor-not-allowed
-          disabled:opacity-50
-        "
+                inline-flex w-full items-center
+                justify-center gap-2
+                rounded-lg border border-emerald-200
+              bg-white px-4 py-2.5
+                text-sm font-semibold
+              text-emerald-700
+                transition
+              hover:bg-emerald-50
+                disabled:cursor-not-allowed
+                disabled:opacity-50"
             >
               <RotateCcw size={18} />
 
@@ -400,17 +395,12 @@ export default function SaleDetail({ sale, onCancelSale, cancelling = false }) {
               type="button"
               onClick={() => setShowCancelConfirmation(true)}
               disabled={cancelling}
-              className="
-          inline-flex w-full items-center
-          justify-center gap-2 rounded-lg
-          border border-red-200 bg-white
-          px-4 py-2.5 text-sm
-          font-semibold text-red-600
-          transition
-          hover:bg-red-50
-          disabled:cursor-not-allowed
-          disabled:opacity-50
-        "
+              className="inline-flex w-full items-center
+                justify-center gap-2 rounded-lg
+                border border-red-200 bg-white
+                px-4 py-2.5 text-sm font-semibold text-red-600
+                transition hover:bg-red-50 disabled:cursor-not-allowed
+                disabled:opacity-50"
             >
               <XCircle size={18} />
               Anular venta
@@ -441,13 +431,12 @@ export default function SaleDetail({ sale, onCancelSale, cancelling = false }) {
                   onClick={() => setShowCancelConfirmation(false)}
                   disabled={cancelling}
                   className="
-              rounded-lg border border-gray-300
-              bg-white px-4 py-2
-              text-sm font-semibold text-gray-700
-              transition hover:bg-gray-50
-              disabled:cursor-not-allowed
-              disabled:opacity-50
-            "
+                    rounded-lg border border-gray-300
+                   bg-white px-4 py-2
+                    text-sm font-semibold text-gray-700
+                    transition hover:bg-gray-50
+                    disabled:cursor-not-allowed
+                    disabled:opacity-50"
                 >
                   No, mantener venta
                 </button>
@@ -457,14 +446,13 @@ export default function SaleDetail({ sale, onCancelSale, cancelling = false }) {
                   onClick={handleConfirmCancellation}
                   disabled={cancelling}
                   className="
-              inline-flex items-center justify-center
-              gap-2 rounded-lg bg-red-600
-              px-4 py-2 text-sm
-              font-semibold text-white
-              transition hover:bg-red-700
-              disabled:cursor-not-allowed
-              disabled:bg-red-300
-            "
+                    inline-flex items-center justify-center
+                    gap-2 rounded-lg bg-red-600
+                    px-4 py-2 text-sm
+                    font-semibold text-white
+                    transition hover:bg-red-700
+                    disabled:cursor-not-allowed
+                  disabled:bg-red-300"
                 >
                   <XCircle size={17} />
 
@@ -503,20 +491,18 @@ export default function SaleDetail({ sale, onCancelSale, cancelling = false }) {
       {showReceipt && (
         <div
           className="
-      fixed inset-0 z-200
-      flex items-start justify-center
-      overflow-y-auto
-      bg-black/50
-      p-4 sm:p-8
-    "
+            fixed inset-0 z-200
+            flex items-start justify-center
+            overflow-y-auto
+          bg-black/50
+            p-4 sm:p-8"
           onClick={() => setShowReceipt(false)}
         >
           <div
             className="
-        w-full max-w-sm
-        rounded-2xl bg-white
-        p-6 shadow-2xl
-      "
+              w-full max-w-sm
+              rounded-2xl bg-white
+              p-6 shadow-2xl"
             onClick={(event) => event.stopPropagation()}
           >
             <SaleReceipt sale={sale} onClose={() => setShowReceipt(false)} />

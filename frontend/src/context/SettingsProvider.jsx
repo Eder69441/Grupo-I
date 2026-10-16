@@ -19,7 +19,7 @@ export default function SettingsProvider({ children }) {
 
   const [loadingSettings, setLoadingSettings] = useState(true);
 
-  const loadSettings = useCallback(async () => {
+  const reloadSettings = useCallback(async () => {
     try {
       const response = await getSettings();
 
@@ -27,34 +27,62 @@ export default function SettingsProvider({ children }) {
         ...DEFAULT_SETTINGS,
         ...response.data,
       });
+
+      return response.data;
     } catch (error) {
       console.error("No se pudo cargar la configuración:", error);
 
-      // La aplicación puede continuar usando
-      // la configuración predeterminada.
-      setSettings(DEFAULT_SETTINGS);
+      throw error;
     } finally {
       setLoadingSettings(false);
     }
-  }, );
+  }, []);
 
+  // Carga inicial al montar el proveedor.
   useEffect(() => {
-    loadSettings();
-  }, [loadSettings]);
+    let cancelled = false;
 
-  const updateLocalSettings = (newSettings) => {
+    async function fetchInitialSettings() {
+      try {
+        const response = await getSettings();
+
+        if (!cancelled) {
+          setSettings({
+            ...DEFAULT_SETTINGS,
+            ...response.data,
+          });
+        }
+      } catch (error) {
+        console.error("No se pudo cargar la configuración:", error);
+
+      } finally {
+        if (!cancelled) {
+          setLoadingSettings(false);
+        }
+      }
+    }
+
+    fetchInitialSettings();
+
+    return () => {
+      cancelled = true;
+    };
+  }, []);
+
+  // Actualiza la configuración sin realizar otra petición.
+  const updateLocalSettings = useCallback((newSettings) => {
     setSettings((current) => ({
       ...current,
       ...newSettings,
     }));
-  };
+  }, []);
 
   return (
     <SettingsContext.Provider
       value={{
         settings,
         loadingSettings,
-        reloadSettings: loadSettings,
+        reloadSettings,
         updateLocalSettings,
       }}
     >

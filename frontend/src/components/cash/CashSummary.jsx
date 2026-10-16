@@ -10,6 +10,8 @@ import {
 import useCurrency from "../../hooks/useCurrency";
 
 export default function CashSummary({ summary }) {
+  const { formatCurrency } = useCurrency();
+
   if (!summary) {
     return null;
   }
@@ -121,12 +123,16 @@ export default function CashSummary({ summary }) {
           </div>
 
           <div className="space-y-3">
-            <div className="flex justify-between text-sm">
-              <span className="text-gray-600">Reembolso en efectivo</span>
+            <div className="rounded-xl border border-red-100 bg-red-50 p-4">
+              <p className="text-sm font-medium text-red-700">
+                Reembolsos en efectivo
+              </p>
 
-              <span className="font-semibold text-red-600">
-                -{formatCurrency(summary.cashRefunds)}
-              </span>
+              <p className="mt-2 text-2xl font-bold text-red-800">
+                {formatCurrency(summary.cashRefunds || 0)}
+              </p>
+
+            
             </div>
 
             <div className="flex justify-between text-sm">
@@ -157,6 +163,24 @@ export default function CashSummary({ summary }) {
           </div>
         </div>
       )}
+      {/* Efectivo esperado */}
+<div className="mt-6 rounded-xl border border-emerald-200 bg-emerald-50 p-4">
+  <div className="flex items-center gap-2 text-emerald-700">
+    <Banknote size={18} />
+
+    <h3 className="text-sm font-semibold">
+      Efectivo esperado en caja
+    </h3>
+  </div>
+
+  <p className="mt-2 text-2xl font-bold text-emerald-800">
+    {formatCurrency(summary.expectedCash || 0)}
+  </p>
+
+  <p className="mt-1 text-xs text-emerald-700">
+    Fondo inicial + ventas en efectivo - reembolsos en efectivo
+  </p>
+</div>
     </div>
   );
 }

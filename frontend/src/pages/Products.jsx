@@ -229,6 +229,8 @@ export default function Products() {
           <ProductTable
             products={filteredProducts}
             onDelete={handleDelete}
+            onManageBatches={(product) =>
+              navigate(`/products/${product._id || product.id}/batches`)}
             canManage={canManage}
           />
         )}

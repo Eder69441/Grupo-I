@@ -1,5 +1,18 @@
 import { ArrowDown, ArrowUp } from "lucide-react";
 
+function getMovementOrigin(movement) {
+  const origins = {
+    lote_inicial: "Entrada inicial",
+    reposicion: "Reposición",
+    venta: "Venta",
+    anulacion: "Anulación",
+    devolucion: "Devolución",
+    ajuste: "Ajuste",
+  };
+
+  return origins[movement.origin] || "Sin clasificar";
+}
+
 export default function MovementTable({ movements }) {
   return (
     <div className="overflow-hidden rounded-xl border border-gray-200 bg-white">
@@ -12,7 +25,15 @@ export default function MovementTable({ movements }) {
               </th>
 
               <th className="px-5 py-3 text-left text-xs font-semibold uppercase tracking-wider text-gray-500">
+                Lote
+              </th>
+
+              <th className="px-5 py-3 text-left text-xs font-semibold uppercase tracking-wider text-gray-500">
                 Tipo
+              </th>
+
+              <th className="px-5 py-3 text-left text-xs font-semibold uppercase tracking-wider text-gray-500">
+                Origen
               </th>
 
               <th className="px-5 py-3 text-left text-xs font-semibold uppercase tracking-wider text-gray-500">
@@ -46,7 +67,10 @@ export default function MovementTable({ movements }) {
               const isEntry = movement.type === "entrada";
 
               return (
-                <tr key={movement.id || movement._id} className="transition hover:bg-gray-50">
+                <tr
+                  key={movement.id || movement._id}
+                  className="transition hover:bg-gray-50"
+                >
                   <td className="whitespace-nowrap px-5 py-4">
                     <div>
                       <p className="text-sm font-medium text-gray-900">
@@ -57,6 +81,29 @@ export default function MovementTable({ movements }) {
                         {movement.product?.category}
                       </p>
                     </div>
+                  </td>
+
+                  <td className="whitespace-nowrap px-5 py-4">
+                    {movement.batch ? (
+                      <div>
+                        <p className="text-sm font-medium text-gray-800">
+                          {movement.batch.batchNumber}
+                        </p>
+
+                        <p className="text-xs text-gray-500">
+                          Vence:{" "}
+                          {movement.batch.expirationDate
+                            ? new Date(
+                                movement.batch.expirationDate,
+                              ).toLocaleDateString("es-DO", {
+                                timeZone: "UTC",
+                              })
+                            : "Sin fecha"}
+                        </p>
+                      </div>
+                    ) : (
+                      <span className="text-sm text-gray-400">Sin lote</span>
+                    )}
                   </td>
 
                   <td className="whitespace-nowrap px-5 py-4">
@@ -82,10 +129,20 @@ export default function MovementTable({ movements }) {
                     </span>
                   </td>
 
-                  <td className="whitespace-nowrap px-5 py-4 text-sm font-semibold text-gray-900">
-                    {movement.quantity}
+                  <td className="whitespace-nowrap px-5 py-4">
+                    <span className="inline-flex rounded-lg bg-gray-100 px-2.5 py-1 text-xs font-medium text-gray-700">
+                      {getMovementOrigin(movement)}
+                    </span>
                   </td>
 
+                  <td
+                    className={`whitespace-nowrap px-5 py-4 text-sm font-bold ${
+                      isEntry ? "text-emerald-700" : "text-red-600"
+                    }`}
+                  >
+                    {isEntry ? "+" : "−"}
+                    {movement.quantity}
+                  </td>
                   <td className="whitespace-nowrap px-5 py-4 text-sm text-gray-600">
                     {movement.previousStock}
                   </td>

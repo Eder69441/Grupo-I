@@ -24,6 +24,7 @@ export default function SaleCart({
   onAmountReceivedChange,
   change,
   insufficientCash,
+  approvedPayment,
 }) {
   const numericAmountReceived = Number(amountReceived) || 0;
   const { formatCurrency } = useCurrency();
@@ -123,14 +124,9 @@ export default function SaleCart({
                       onQuantityChange(item.product._id, e.target.value)
                     }
                     disabled={saving}
-                    className="
-    w-14 border-x border-gray-200
-    bg-white px-1 py-2
-    text-center text-sm font-semibold
-    text-gray-700 outline-none
-    focus:bg-emerald-50
-    disabled:bg-gray-50
-  "
+                    className="w-14 border-x border-gray-200 bg-white px-1 py-2
+                    text-center text-sm font-semibold text-gray-700 outline-none
+                    focus:bg-emerald-50 disabled:bg-gray-50  "
                   />
 
                   <button
@@ -142,8 +138,7 @@ export default function SaleCart({
                       hover:text-gray-900
                       disabled:cursor-not-allowed
                       disabled:text-gray-300
-                    "
-                    title="Aumentar cantidad"
+                      "title="Aumentar cantidad"
                   >
                     <Plus size={15} />
                   </button>
@@ -207,9 +202,7 @@ export default function SaleCart({
                 "
               >
                 <option value="cash">Efectivo</option>
-
                 <option value="card">Tarjeta</option>
-
                 <option value="transfer">Transferencia</option>
               </select>
             </div>
@@ -308,6 +301,48 @@ export default function SaleCart({
                 </div>
               </div>
             )}
+
+            {paymentMethod === "card" && (
+              <div className="mt-3 rounded-lg border border-blue-100 bg-blue-50 p-3">
+                <div className="flex items-start gap-2">
+                  <CreditCard
+                    size={18}
+                    className="mt-0.5 shrink-0 text-blue-600"
+                  />
+
+                  <div>
+                    <p className="text-sm font-semibold text-blue-800">
+                      Terminal POS simulada
+                    </p>
+
+                    <p className="mt-1 text-xs text-blue-700">
+                      Al continuar, se abrirá una terminal de prueba para
+                      simular la autorización del pago. No se procesará dinero
+                      real.
+                    </p>
+                  </div>
+                </div>
+              </div>
+            )}
+            {paymentMethod === "card" && approvedPayment && (
+              <div className="mt-4 rounded-xl border border-emerald-200 bg-emerald-50 p-4">
+                <div className="flex items-center gap-2">
+                  <CreditCard size={18} className="text-emerald-600" />
+
+                  <p className="text-sm font-semibold text-emerald-800">
+                    Pago simulado aprobado
+                  </p>
+                </div>
+
+                <p className="mt-2 break-all text-xs text-emerald-700">
+                  Referencia: {approvedPayment.reference}
+                </p>
+
+                <p className="mt-2 text-xs text-emerald-700">
+                  Pendiente de asociar con la venta.
+                </p>
+              </div>
+            )}
           </div>
         )}
 
@@ -329,7 +364,11 @@ export default function SaleCart({
             disabled:bg-gray-300
           "
         >
-          {saving ? "Procesando venta..." : "Completar venta"}
+          {saving
+            ? "Procesando venta..."
+            : paymentMethod === "card"
+              ? "Pagar con tarjeta"
+              : "Completar venta"}
         </button>
       </div>
     </div>

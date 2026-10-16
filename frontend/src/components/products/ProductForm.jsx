@@ -1,12 +1,12 @@
 import { useState, useEffect } from "react";
 import { useNavigate } from "react-router-dom";
 import {
-  CalendarDays,
   DollarSign,
   Package,
   Save,
   Tags,
-  Boxes,
+  ScanBarcode,
+  Hash,
 } from "lucide-react";
 
 import { getLocations } from "../../services/locationService";
@@ -20,15 +20,16 @@ export default function ProductForm({
   loadingText = "Guardando...",
   loading = false,
   categories = [],
-  stockReadOnly = false,
 }) {
   const navigate = useNavigate();
 
   const [form, setForm] = useState({
+    code: initialData.code || "",
+    barcode: initialData.barcode || "",
     name: initialData.name || "",
     category: initialData.category || "",
-    price: initialData.price || "",
-    stock: initialData.stock ?? "",
+    price: initialData.price ?? "",
+    stock: initialData.stock ?? 0,
     expirationDate: initialData.expirationDate || "",
     location:
       typeof initialData.location === "object"
@@ -91,27 +92,12 @@ export default function ProductForm({
       newErrors.price = "El precio debe ser mayor que 0.";
     }
 
-    if (!stockReadOnly) {
-      if (form.stock === "") {
-        newErrors.stock = "El stock es obligatorio.";
-      } else if (Number(form.stock) < 0) {
-        newErrors.stock = "El stock no puede ser negativo.";
-      } else if (!Number.isInteger(Number(form.stock))) {
-        newErrors.stock = "El stock debe ser un número entero.";
-      }
-    }
+    const code = form.code.trim().toUpperCase();
+    const barcode = form.barcode.trim();
 
-    if (!form.expirationDate) {
-      newErrors.expirationDate = "La fecha de vencimiento es obligatoria.";
-    } else {
-      const today = new Date();
-      today.setHours(0, 0, 0, 0);
-
-      const expiration = new Date(`${form.expirationDate}T00:00:00`);
-
-      if (expiration <= today) {
-        newErrors.expirationDate = "La fecha debe ser posterior a hoy.";
-      }
+    if (code && barcode && code === barcode) {
+      newErrors.barcode =
+        "El código de barras debe ser diferente del código interno.";
     }
 
     setErrors(newErrors);
@@ -128,7 +114,14 @@ export default function ProductForm({
       return;
     }
 
-    await onSubmit(form);
+    await onSubmit({
+      code: form.code.trim().toUpperCase(),
+      barcode: form.barcode.trim(),
+      name: form.name.trim(),
+      category: form.category,
+      price: Number(form.price),
+      location: form.location,
+    });
   };
 
   const getInputClass = (hasError) => `
@@ -171,6 +164,71 @@ export default function ProductForm({
       </div>
 
       <div className="grid gap-5 md:grid-cols-2">
+        {/* Código interno */}
+        <div>
+          <label
+            htmlFor="code"
+            className="mb-2 block text-sm font-medium text-gray-700"
+          >
+            Código interno
+          </label>
+
+          <div className="relative">
+            <Hash
+              size={18}
+              className="absolute left-3 top-1/2 -translate-y-1/2 text-gray-400"
+            />
+
+            <input
+              id="code"
+              type="text"
+              name="code"
+              value={form.code}
+              onChange={handleChange}
+              disabled={loading}
+              placeholder="Ej. MED-000125"
+              autoComplete="off"
+              className={`${getInputClass(errors.code)} pl-10`}
+            />
+          </div>
+
+          {errors.code && (
+            <p className="mt-1.5 text-sm text-red-600">{errors.code}</p>
+          )}
+        </div>
+
+        {/* Código de barras */}
+        <div>
+          <label
+            htmlFor="barcode"
+            className="mb-2 block text-sm font-medium text-gray-700"
+          >
+            Código de barras
+          </label>
+
+          <div className="relative">
+            <ScanBarcode
+              size={18}
+              className="absolute left-3 top-1/2 -translate-y-1/2 text-gray-400"
+            />
+
+            <input
+              id="barcode"
+              type="text"
+              name="barcode"
+              value={form.barcode}
+              onChange={handleChange}
+              disabled={loading}
+              placeholder="Escanea o escribe el código"
+              autoComplete="off"
+              className={`${getInputClass(errors.barcode)} pl-10`}
+            />
+          </div>
+
+          {errors.barcode && (
+            <p className="mt-1.5 text-sm text-red-600">{errors.barcode}</p>
+          )}
+        </div>
         {/* Nombre */}
         <div className="md:col-span-2">
           <label
@@ -305,82 +363,6 @@ export default function ProductForm({
 
           {errors.price && (
             <p className="mt-1.5 text-sm text-red-600">{errors.price}</p>
-          )}
-        </div>
-
-        {/* Stock */}
-        <div>
-          <label
-            htmlFor="stock"
-            className="mb-2 block text-sm font-medium text-gray-700"
-          >
-            {stockReadOnly ? "Stock actual" : "Stock"}
-          </label>
-
-          <div className="relative">
-            <Boxes
-              size={18}
-              className="
-        absolute left-3 top-1/2
-        -translate-y-1/2
-        text-gray-400
-      "
-            />
-
-            <input
-              id="stock"
-              type="number"
-              name="stock"
-              value={form.stock}
-              onChange={handleChange}
-              disabled={loading || stockReadOnly}
-              placeholder="0"
-              min="0"
-              step="1"
-              className={`${getInputClass(errors.stock)} pl-10`}
-            />
-          </div>
-
-          {stockReadOnly ? (
-            <p className="mt-1.5 text-xs text-gray-500">
-              El stock se modifica mediante movimientos de inventario.
-            </p>
-          ) : (
-            errors.stock && (
-              <p className="mt-1.5 text-sm text-red-600">{errors.stock}</p>
-            )
-          )}
-        </div>
-        {/* Vencimiento */}
-        <div>
-          <label
-            htmlFor="expirationDate"
-            className="mb-2 block text-sm font-medium text-gray-700"
-          >
-            Fecha de vencimiento
-          </label>
-
-          <div className="relative">
-            <CalendarDays
-              size={18}
-              className="pointer-events-none absolute left-3 top-1/2 -translate-y-1/2 text-gray-400"
-            />
-
-            <input
-              id="expirationDate"
-              type="date"
-              name="expirationDate"
-              value={form.expirationDate}
-              onChange={handleChange}
-              disabled={loading}
-              className={`${getInputClass(errors.expirationDate)} pl-10`}
-            />
-          </div>
-
-          {errors.expirationDate && (
-            <p className="mt-1.5 text-sm text-red-600">
-              {errors.expirationDate}
-            </p>
           )}
         </div>
       </div>

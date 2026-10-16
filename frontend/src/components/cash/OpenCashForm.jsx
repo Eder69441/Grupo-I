@@ -6,6 +6,7 @@ import useCurrency from "../../hooks/useCurrency";
 
 export default function OpenCashForm({ onOpen, loading = false }) {
   const [openingAmount, setOpeningAmount] = useState("");
+  const { formatCurrency } = useCurrency();
 
   const handleSubmit = async (event) => {
     event.preventDefault();

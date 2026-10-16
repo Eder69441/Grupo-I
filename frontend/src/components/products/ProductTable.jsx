@@ -1,14 +1,17 @@
 import { Link } from "react-router-dom";
-import { Pencil, CircleOff, MapPin } from "lucide-react";
+import { Pencil, CircleOff, MapPin, Boxes } from "lucide-react";
 
 import StockBadge from "./StockBadge";
-import ExpirationBadge from "./ExpirationBadge";
 
 import useCurrency from "../../hooks/useCurrency";
-import { formatDate } from "../../utils/formatDate";
 
-export default function ProductTable({ products, onDelete, canManage }) {
-const { formatCurrency } = useCurrency();
+export default function ProductTable({
+  products,
+  onDelete,
+  onManageBatches,
+  canManage,
+}) {
+  const { formatCurrency } = useCurrency();
 
   return (
     <div className="overflow-hidden rounded-xl border border-gray-200 bg-white shadow-sm">
@@ -18,16 +21,11 @@ const { formatCurrency } = useCurrency();
           <thead className="border-b border-gray-200 bg-gray-50">
             <tr className="text-xs font-semibold uppercase tracking-wide text-gray-500">
               <th className="px-5 py-4">Producto</th>
-
               <th className="px-5 py-4">Categoría</th>
-
               <th className="px-5 py-4">Precio</th>
-
               <th className="px-5 py-4">Stock</th>
-
               <th className="px-5 py-4">Ubicación</th>
-
-              <th className="px-5 py-4">Vencimiento</th>
+              {/* <th className="px-5 py-4">Vencimiento</th> */}
 
               {canManage && <th className="px-5 py-4 text-right">Acciones</th>}
             </tr>
@@ -90,21 +88,21 @@ const { formatCurrency } = useCurrency();
                   )}
                 </td>
 
-                {/* Vencimiento */}
-                <td className="whitespace-nowrap px-5 py-4">
-                  <div className="flex flex-col items-start gap-1.5">
-                    <span className="text-sm text-gray-600">
-                      {formatDate(product.expirationDate)}
-                    </span>
-
-                    <ExpirationBadge expirationDate={product.expirationDate} />
-                  </div>
-                </td>
-
                 {/* Acciones */}
                 {canManage && (
                   <td className="px-5 py-4">
                     <div className="flex justify-end gap-1">
+                      <button
+                        type="button"
+                        onClick={() => onManageBatches(product)}
+                        className="inline-flex h-9 w-9 items-center justify-center
+                          rounded-lg text-gray-500 transition hover:bg-blue-50
+                          hover:text-blue-600"
+                        title="Gestionar lotes"
+                        aria-label={`Gestionar lotes de ${product.name}`}
+                      >
+                        <Boxes size={17} />
+                      </button>
                       <Link
                         to={`/products/edit/${product.id}`}
                         className="

@@ -4,11 +4,11 @@ import { Landmark } from "lucide-react";
 
 import CashStatus from "../components/cash/CashStatus";
 import OpenCashForm from "../components/cash/OpenCashForm";
-import CloseCashForm from "../components/cash/CloseCashForm";
 import CashHistoryTable from "../components/cash/CashHistoryTable";
 import CashSummary from "../components/cash/CashSummary";
 import CashClosingSummary from "../components/cash/CashClosingSummary";
 import CashSessionDetail from "../components/cash/CashSessionDetail";
+import CashCloseForm from "../components/cash/CashCloseForm";
 
 import Spinner from "../components/common/Spinner";
 import ErrorMessage from "../components/common/ErrorMessage";
@@ -23,21 +23,13 @@ import {
 
 export default function Cash() {
   const [currentSession, setCurrentSession] = useState(null);
-
   const [sessions, setSessions] = useState([]);
-
   const [loading, setLoading] = useState(true);
-
   const [processing, setProcessing] = useState(false);
-
   const [error, setError] = useState("");
-
   const [success, setSuccess] = useState("");
-
   const [lastClosedSession, setLastClosedSession] = useState(null);
-
   const [selectedSession, setSelectedSession] = useState(null);
-
   const [loadingDetail, setLoadingDetail] = useState(false);
 
   useEffect(() => {
@@ -102,7 +94,7 @@ export default function Cash() {
     }
   };
 
-  const handleClose = async (countedCash) => {
+  const handleClose = async ({ countedCash }) => {
     try {
       setProcessing(true);
       setError("");
@@ -208,7 +200,13 @@ export default function Cash() {
               <CashSummary summary={currentSession.summary} />
             </div>
 
-            <CloseCashForm onClose={handleClose} loading={processing} />
+            <div>
+              <CashCloseForm
+                cashSession={currentSession}
+                onClose={handleClose}
+                loading={processing}
+              />
+            </div>
           </div>
         </div>
       ) : (

@@ -9,6 +9,7 @@ import useCurrency from "../../hooks/useCurrency";
 import { formatDateTime } from "../../utils/formatDateTime";
 
 export default function CashStatus({ cashSession }) {
+   const { formatCurrency } = useCurrency();
   if (!cashSession) {
     return null;
   }

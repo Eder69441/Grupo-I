@@ -14,6 +14,7 @@ export default function Returns() {
   const [selectedReturn, setSelectedReturn] = useState(null);
   const [search, setSearch] = useState("");
   const [refundMethod, setRefundMethod] = useState("all");
+  const [inventoryFilter, setInventoryFilter] = useState("all");
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState("");
   const { formatCurrency } = useCurrency();
@@ -58,10 +59,16 @@ export default function Returns() {
 
       const matchesMethod =
         refundMethod === "all" || returnRecord.refundMethod === refundMethod;
+      const matchesInventory =
+        inventoryFilter === "all" ||
+        (inventoryFilter === "restocked" &&
+          returnRecord.items.some((item) => item.restock === true)) ||
+        (inventoryFilter === "not-restocked" &&
+          returnRecord.items.some((item) => item.restock === false));
 
-      return matchesSearch && matchesMethod;
+      return matchesSearch && matchesMethod && matchesInventory;
     });
-  }, [returns, search, refundMethod]);
+  }, [returns, search, refundMethod, inventoryFilter]);
 
   const totalRefunded = filteredReturns.reduce(
     (total, returnRecord) => total + returnRecord.total,
@@ -141,6 +148,16 @@ export default function Returns() {
             <option value="cash">Efectivo</option>
             <option value="card">Tarjeta</option>
             <option value="transfer">Transferencia</option>
+          </select>
+
+          <select
+            value={inventoryFilter}
+            onChange={(event) => setInventoryFilter(event.target.value)}
+            className="rounded-lg border border-gray-300 bg-white px-3 py-2.5 text-sm outline-none focus:border-emerald-500"
+          >
+            <option value="all">Todas las devoluciones</option>
+            <option value="restocked">Con reincorporación</option>
+            <option value="not-restocked">Sin reincorporación</option>
           </select>
         </div>
       </div>
