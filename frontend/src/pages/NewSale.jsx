@@ -108,82 +108,68 @@ export default function NewSale() {
     });
   };
 
-  const handleScanProduct = async (input) => {
-    if (saving || showPaymentTerminal || loading) {
-      return false;
-    }
 
-    const rawInput = String(input).trim();
+const handleScanProduct = async (code) => {
+  if (saving || showPaymentTerminal || loading) {
+    return false;
+  }
 
-    if (!rawInput) return false;
+  const normalizedCode = String(code).trim().toLowerCase();
 
-    let quantity = 1;
-    let productCode = rawInput;
+  if (!normalizedCode) return false;
 
-    // Formato opcional: cantidad*código
-    if (rawInput.includes("*")) {
-      const match = rawInput.match(/^(\d+)\*(.+)$/);
+  const product = products.find((item) => {
+    const internalCode = String(item.code ?? "")
+      .trim()
+      .toLowerCase();
 
-      if (!match) {
-        setError("Formato inválido. Ejemplo: 3*MED-001");
-        return false;
-      }
+    const barcode = String(item.barcode ?? "")
+      .trim()
+      .toLowerCase();
 
-      quantity = Number(match[1]);
-      productCode = match[2].trim();
+    return (
+      internalCode === normalizedCode ||
+      barcode === normalizedCode
+    );
+  });
 
-      if (!Number.isSafeInteger(quantity) || quantity <= 0 || !productCode) {
-        setError("Introduce una cantidad válida mayor que cero.");
-        return false;
-      }
-    }
+  if (!product) {
+    setError(`No existe un producto con el código "${code}".`);
+    return false;
+  }
 
-    const normalizedCode = productCode.toLowerCase();
+  if (product.active === false) {
+    setError(`El producto "${product.name}" está desactivado.`);
+    return false;
+  }
 
-    const product = products.find((item) => {
-      const internalCode = String(item.code ?? "")
-        .trim()
-        .toLowerCase();
+  const stock = Number(product.stock);
 
-      const barcode = String(item.barcode ?? "")
-        .trim()
-        .toLowerCase();
+  if (!Number.isFinite(stock) || stock <= 0) {
+    setError(`El producto "${product.name}" no tiene existencias.`);
+    return false;
+  }
 
-      return internalCode === normalizedCode || barcode === normalizedCode;
-    });
+  const existingItem = cart.find(
+    (item) => item.product._id === product._id,
+  );
 
-    if (!product) {
-      setError(`No existe un producto con el código "${productCode}".`);
-      return false;
-    }
+  if (existingItem && existingItem.quantity >= stock) {
+    setError(
+      `Stock insuficiente para "${product.name}". Disponible: ${stock}.`,
+    );
 
-    if (product.active === false) {
-      setError(`El producto "${product.name}" está desactivado.`);
-      return false;
-    }
+    return false;
+  }
 
-    const stock = Number(product.stock);
+  handleAddProduct(product);
 
-    if (!Number.isFinite(stock) || stock <= 0) {
-      setError(`El producto "${product.name}" no tiene existencias.`);
-      return false;
-    }
+  return {
+    name: product.name,
+    quantity: (existingItem?.quantity || 0) + 1,
+  };
+};
 
-    const existingItem = cart.find((item) => item.product._id === product._id);
-
-    const currentQuantity = existingItem?.quantity || 0;
-    const newQuantity = currentQuantity + quantity;
-
-    if (newQuantity > stock) {
-      setError(
-        `Stock insuficiente para "${product.name}". ` +
-          `Disponible: ${stock}. ` +
-          `En carrito: ${currentQuantity}. ` +
-          `Solicitado: ${quantity}.`,
-      );
-
-      return false;
-    }
 
     // Actualizar carrito con la cantidad solicitada
     invalidateApprovedPayment();
