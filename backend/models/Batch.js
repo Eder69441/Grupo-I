@@ -9,6 +9,13 @@ const batchSchema = new mongoose.Schema(
       index: true,
     },
 
+    branch: {
+  type: mongoose.Schema.Types.ObjectId,
+  ref: "Branch",
+  required: true,
+  index: true,
+},
+
     batchNumber: {
       type: String,
       required: true,
@@ -55,12 +62,14 @@ const batchSchema = new mongoose.Schema(
 
 batchSchema.index(
   {
+    branch: 1,
     product: 1,
     batchNumber: 1,
   },
   {
     unique: true,
   },
+);
 );
 
 module.exports = mongoose.model("Batch", batchSchema);
