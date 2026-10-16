@@ -25,6 +25,13 @@ const userSchema = new mongoose.Schema(
       enum: ["admin", "employee"],
       default: "employee"
     }
+
+    branch: {
+  type: mongoose.Schema.Types.ObjectId,
+  ref: "Branch",
+  default: null,
+  index: true,
+},
   },
   {
     timestamps: true,
