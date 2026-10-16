@@ -17,6 +17,7 @@ const pharmacySettingsRoutes = require("./routes/pharmacySettingsRoutes");
 const batchRoutes = require("./routes/batchRoutes");
 const paymentRoutes = require("./routes/paymentRoutes");
 const branchRoutes = require("./routes/branchRoutes");
+const branchInventoryRoutes = require("./routes/branchInventoryRoutes");
 
 
 const app = express();
@@ -56,6 +57,7 @@ app.use("/api/cash-sessions", cashSessionRoutes);
 app.use("/api/settings", pharmacySettingsRoutes);
 app.use("/api/batches", batchRoutes);
 app.use("/api/branches", branchRoutes);
+app.use("/api/branch-inventory", branchInventoryRoutes);
 
 
 const PORT = process.env.PORT || 3000;
