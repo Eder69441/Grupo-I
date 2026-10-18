@@ -6,15 +6,14 @@ const batchSchema = new mongoose.Schema(
       type: mongoose.Schema.Types.ObjectId,
       ref: "Product",
       required: true,
-      index: true,
     },
 
     branch: {
-  type: mongoose.Schema.Types.ObjectId,
-  ref: "Branch",
-  required: true,
-  index: true,
-},
+      type: mongoose.Schema.Types.ObjectId,
+      ref: "Branch",
+      required: true,
+      index: true,
+    },
 
     batchNumber: {
       type: String,
@@ -26,27 +25,24 @@ const batchSchema = new mongoose.Schema(
     expirationDate: {
       type: Date,
       required: true,
-      index: true,
     },
 
     stock: {
       type: Number,
       required: true,
       min: 0,
-      default: 0,
     },
 
     initialStock: {
       type: Number,
       required: true,
       min: 0,
-      default: 0,
     },
 
     unitCost: {
       type: Number,
-      min: 0,
       default: 0,
+      min: 0,
     },
 
     active: {
@@ -60,16 +56,7 @@ const batchSchema = new mongoose.Schema(
   },
 );
 
-batchSchema.index(
-  {
-    branch: 1,
-    product: 1,
-    batchNumber: 1,
-  },
-  {
-    unique: true,
-  },
-);
-);
+// Índice único por sucursal, producto y lote
+batchSchema.index({ branch: 1, product: 1, batchNumber: 1 }, { unique: true });
 
 module.exports = mongoose.model("Batch", batchSchema);

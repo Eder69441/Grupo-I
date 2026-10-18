@@ -8,6 +8,13 @@ const cashSessionSchema = new mongoose.Schema(
       unique: true,
       trim: true,
     },
+    
+    branch: {
+      type: mongoose.Schema.Types.ObjectId,
+      ref: "Branch",
+      required: true,
+    },
+
 
     openedBy: {
       type: mongoose.Schema.Types.ObjectId,
@@ -114,5 +121,18 @@ const cashSessionSchema = new mongoose.Schema(
     versionKey: false,
   },
 );
+
+
+cashSessionSchema.index(
+  { branch: 1 },
+  {
+    unique: true,
+    partialFilterExpression: {
+      status: "open",
+    },
+    name: "unique_open_cash_session_per_branch",
+  },
+);
+
 
 module.exports = mongoose.model("CashSession", cashSessionSchema);

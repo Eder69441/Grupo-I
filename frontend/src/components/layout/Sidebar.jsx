@@ -1,6 +1,7 @@
 import { NavLink } from "react-router-dom";
 
 import {
+  Building2,
   LayoutDashboard,
   Package,
   ArrowLeftRight,
@@ -20,6 +21,7 @@ import {
 import useAuth from "../../context/useAuth";
 import { ROLES, ROLE_LABELS } from "../../constants/roles";
 import useSettings from "../../context/useSettings";
+import BranchSelector from "../branch/BranchSelector";
 
 export default function Sidebar({ isOpen, onClose }) {
   const { user, logout } = useAuth();
@@ -82,6 +84,9 @@ export default function Sidebar({ isOpen, onClose }) {
 
         {/* Navegación */}
         <nav className="flex-1 overflow-y-auto px-4 py-6">
+          <div className="mb-6 border-b border-gray-100 pb-5">
+            <BranchSelector />
+          </div>
           <p className="mb-3 px-3 text-xs font-semibold uppercase tracking-wider text-gray-400">
             General
           </p>
@@ -155,6 +160,11 @@ export default function Sidebar({ isOpen, onClose }) {
                 >
                   <MapPin size={19} />
                   Ubicaciones
+                </NavLink>
+
+                <NavLink to="/branches" onClick={onClose} className={linkClass}>
+                  <Building2 size={19} />
+                  Sucursales
                 </NavLink>
 
                 <NavLink to="/users" onClick={onClose} className={linkClass}>

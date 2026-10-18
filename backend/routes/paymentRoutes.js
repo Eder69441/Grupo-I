@@ -1,11 +1,14 @@
 const express = require("express");
 const crypto = require("node:crypto");
+const mongoose = require("mongoose");
 
 const protect = require("../middleware/authMiddleware");
+const requireBranch = require("../middleware/branchMiddleware");
 
 const PaymentTransaction = require("../models/PaymentTransaction");
 const CashSession = require("../models/CashSession");
 const Product = require("../models/Product");
+const Batch = require("../models/Batch");
 
 const { normalizeCart, getCartHash, toCents } = require("../utils/paymentCart");
 
@@ -13,11 +16,10 @@ const router = express.Router();
 
 const validScenarios = ["approved", "declined", "connection_error"];
 
-router.post("/simulate", protect, async (req, res) => {
+// SIMULAR PAGO POS
+router.post("/simulate", protect, requireBranch, async (req, res) => {
   try {
     const { items, scenario } = req.body;
-
-    const validScenarios = ["approved", "declined", "connection_error"];
 
     if (!validScenarios.includes(scenario)) {
       return res.status(400).json({
@@ -35,15 +37,20 @@ router.post("/simulate", protect, async (req, res) => {
       });
     }
 
+    // Buscar exclusivamente la caja de la sucursal.
     const cashSession = await CashSession.findOne({
+      branch: req.branchId,
       status: "open",
     });
 
     if (!cashSession) {
       return res.status(400).json({
-        message: "Debe existir una caja abierta.",
+        message: "Debe existir una caja abierta en esta sucursal.",
       });
     }
+
+    const today = new Date();
+    today.setUTCHours(0, 0, 0, 0);
 
     let totalCents = 0;
 
@@ -59,9 +66,30 @@ router.post("/simulate", protect, async (req, res) => {
         });
       }
 
+      // Comprobar el stock consolidado.
       if (product.stock < item.quantity) {
         return res.status(400).json({
-          message: `Stock insuficiente para ${product.name}.`,
+          message: `Stock global insuficiente para ${product.name}.`,
+        });
+      }
+
+      // Comprobar el stock vendible de esta sucursal.
+      const batches = await Batch.find({
+        product: product._id,
+        branch: req.branchId,
+        active: true,
+        stock: { $gt: 0 },
+        expirationDate: { $gte: today },
+      }).select("stock");
+
+      const availableStock = batches.reduce(
+        (sum, batch) => sum + batch.stock,
+        0,
+      );
+
+      if (availableStock < item.quantity) {
+        return res.status(400).json({
+          message: `Stock insuficiente en esta sucursal para ${product.name}.`,
         });
       }
 
@@ -92,6 +120,7 @@ router.post("/simulate", protect, async (req, res) => {
       cartHash: getCartHash(normalizedItems),
       expiresAt: new Date(Date.now() + 5 * 60 * 1000),
       user: req.user.id,
+      branch: req.branchId,
       cashSession: cashSession._id,
     });
 
@@ -118,28 +147,32 @@ router.post("/simulate", protect, async (req, res) => {
   }
 });
 
-// Consultar transacción
-router.get("/:id", protect, async (req, res) => {
+// CONSULTAR TRANSACCIÓN
+router.get("/:id", protect, requireBranch, async (req, res) => {
   try {
-    const transaction = await PaymentTransaction.findById(req.params.id);
+    if (!mongoose.isValidObjectId(req.params.id)) {
+      return res.status(400).json({
+        message: "El identificador de la transacción no es válido.",
+      });
+    }
+
+    const transaction = await PaymentTransaction.findOne({
+      _id: req.params.id,
+      branch: req.branchId,
+      user: req.user.id,
+    });
 
     if (!transaction) {
       return res.status(404).json({
-        message: "Transacción no encontrada.",
+        message: "Transacción no encontrada en esta sucursal.",
       });
     }
 
-    if (String(transaction.user) !== String(req.user.id)) {
-      return res.status(403).json({
-        message: "No tienes acceso a esta transacción.",
-      });
-    }
-
-    res.json(transaction);
+    return res.json(transaction);
   } catch (error) {
     console.error("Error al consultar pago:", error);
 
-    res.status(500).json({
+    return res.status(500).json({
       message: "No se pudo consultar la transacción.",
     });
   }

@@ -1,13 +1,16 @@
-
 const mongoose = require("mongoose");
 const User = require("../models/User");
 const Branch = require("../models/Branch");
 
 const requireBranch = async (req, res, next) => {
   try {
-    const user = await User.findById(req.user.id)
-      .select("role branch")
-      .lean();
+    if (!req.user?.id) {
+      return res.status(401).json({
+        message: "Debes iniciar sesión.",
+      });
+    }
+
+    const user = await User.findById(req.user.id).select("role branch").lean();
 
     if (!user) {
       return res.status(401).json({
@@ -15,11 +18,16 @@ const requireBranch = async (req, res, next) => {
       });
     }
 
+    // Por defecto, usar la sucursal asignada al usuario.
     let branchId = user.branch;
 
-    // Administradores pueden seleccionar sucursal operativa
-    if (user.role === "admin" && req.body.branchId) {
-      branchId = req.body.branchId;
+    // Solo el administrador puede seleccionar otra sucursal.
+    if (user.role === "admin") {
+      const requestedBranch = req.body?.branchId ?? req.query?.branchId;
+
+      if (requestedBranch !== undefined) {
+        branchId = requestedBranch;
+      }
     }
 
     if (!branchId || !mongoose.isValidObjectId(branchId)) {
@@ -40,11 +48,13 @@ const requireBranch = async (req, res, next) => {
     }
 
     req.branchId = branch._id;
+    req.branch = branch;
+
     next();
   } catch (error) {
     console.error("Error al validar sucursal:", error);
 
-    res.status(500).json({
+    return res.status(500).json({
       message: "No se pudo validar la sucursal.",
     });
   }

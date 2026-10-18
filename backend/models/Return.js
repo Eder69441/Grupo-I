@@ -93,6 +93,13 @@ const returnSchema = new mongoose.Schema(
       trim: true,
     },
 
+    branch: {
+      type: mongoose.Schema.Types.ObjectId,
+      ref: "Branch",
+      required: true,
+      index: true,
+    },
+
     sale: {
       type: mongoose.Schema.Types.ObjectId,
       ref: "Sale",

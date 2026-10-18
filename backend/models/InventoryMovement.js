@@ -9,11 +9,11 @@ const inventoryMovementSchema = new mongoose.Schema(
     },
 
     branch: {
-  type: mongoose.Schema.Types.ObjectId,
-  ref: "Branch",
-  required: true,
-  index: true,
-},
+      type: mongoose.Schema.Types.ObjectId,
+      ref: "Branch",
+      required: true,
+      index: true,
+    },
 
     batch: {
       type: mongoose.Schema.Types.ObjectId,

@@ -7,34 +7,35 @@ const InventoryMovement = require("../models/InventoryMovement");
 
 const protect = require("../middleware/authMiddleware");
 const authorize = require("../middleware/roleMiddleware");
+const requireBranch = require("../middleware/branchMiddleware");
 
 const router = express.Router();
 
-// Obtener todos los lotes
-router.get("/", protect, async (req, res) => {
+// OBTENER LOTES DE LA SUCURSAL
+router.get("/", protect, requireBranch, async (req, res) => {
   try {
     const batches = await Batch.find({
+      branch: req.branchId,
       active: true,
     })
       .populate("product", "name stock active")
-      .sort({
-        expirationDate: 1,
-      });
+      .populate("branch", "code name")
+      .sort({ expirationDate: 1 });
 
-    res.json(batches);
+    return res.json(batches);
   } catch (error) {
-    console.error(error);
+    console.error("Error al obtener lotes:", error);
 
-    res.status(500).json({
+    return res.status(500).json({
       message: "No se pudieron obtener los lotes.",
     });
   }
 });
 
-// Obtener lotes de un producto
-router.get("/product/:productId", protect, async (req, res) => {
+// OBTENER LOTES DE UN PRODUCTO EN LA SUCURSAL
+router.get("/product/:productId", protect, requireBranch, async (req, res) => {
   try {
-    if (!mongoose.Types.ObjectId.isValid(req.params.productId)) {
+    if (!mongoose.isValidObjectId(req.params.productId)) {
       return res.status(400).json({
         message: "El identificador del producto no es válido.",
       });
@@ -42,307 +43,318 @@ router.get("/product/:productId", protect, async (req, res) => {
 
     const batches = await Batch.find({
       product: req.params.productId,
+      branch: req.branchId,
       active: true,
-    }).sort({
-      expirationDate: 1,
-    });
+    }).sort({ expirationDate: 1 });
 
-    res.json(batches);
+    return res.json(batches);
   } catch (error) {
-    console.error(error);
+    console.error("Error al obtener lotes del producto:", error);
 
-    res.status(500).json({
+    return res.status(500).json({
       message: "No se pudieron obtener los lotes del producto.",
     });
   }
 });
 
-router.post("/", protect, authorize("admin"), async (req, res) => {
-  const { productId, batchNumber, expirationDate, stock, unitCost } = req.body;
+// CREAR LOTE
+router.post(
+  "/",
+  protect,
+  authorize("admin"),
+  requireBranch,
+  async (req, res) => {
+    const { productId, batchNumber, expirationDate, stock, unitCost } =
+      req.body;
 
-  if (!mongoose.Types.ObjectId.isValid(productId)) {
-    return res.status(400).json({
-      message: "El producto no es válido.",
-    });
-  }
-
-  const normalizedBatchNumber =
-    typeof batchNumber === "string" ? batchNumber.trim().toUpperCase() : "";
-
-  if (!normalizedBatchNumber) {
-    return res.status(400).json({
-      message: "El número de lote es obligatorio.",
-    });
-  }
-
-  const expiration = new Date(expirationDate);
-
-  if (!expirationDate || Number.isNaN(expiration.getTime())) {
-    return res.status(400).json({
-      message: "La fecha de vencimiento no es válida.",
-    });
-  }
-
-  const today = new Date();
-  today.setUTCHours(0, 0, 0, 0);
-
-  if (expiration <= today) {
-    return res.status(400).json({
-      message: "El lote debe tener una fecha de vencimiento futura.",
-    });
-  }
-
-  const quantity = Number(stock);
-
-  if (!Number.isInteger(quantity) || quantity <= 0) {
-    return res.status(400).json({
-      message: "La cantidad debe ser un entero mayor que cero.",
-    });
-  }
-
-  const cost = Number(unitCost ?? 0);
-
-  if (!Number.isFinite(cost) || cost < 0) {
-    return res.status(400).json({
-      message: "El costo unitario no es válido.",
-    });
-  }
-
-  const session = await mongoose.startSession();
-
-  try {
-    session.startTransaction();
-
-    const product = await Product.findOne({
-      _id: productId,
-      active: { $ne: false },
-    }).session(session);
-
-    if (!product) {
-      await session.abortTransaction();
-
-      return res.status(404).json({
-        message: "El producto no existe o está inactivo.",
+    if (!mongoose.isValidObjectId(productId)) {
+      return res.status(400).json({
+        message: "El producto no es válido.",
       });
     }
 
-    const existingBatch = await Batch.findOne({
-      product: productId,
-      batchNumber: normalizedBatchNumber,
-    }).session(session);
+    const normalizedBatchNumber =
+      typeof batchNumber === "string" ? batchNumber.trim().toUpperCase() : "";
 
-    if (existingBatch) {
-      await session.abortTransaction();
-
-      return res.status(409).json({
-        message: "Este número de lote ya existe para el producto.",
+    if (!normalizedBatchNumber) {
+      return res.status(400).json({
+        message: "El número de lote es obligatorio.",
       });
     }
 
-    // Crear el lote
-    const [batch] = await Batch.create(
-      [
-        {
+    const expiration = new Date(expirationDate);
+
+    if (!expirationDate || Number.isNaN(expiration.getTime())) {
+      return res.status(400).json({
+        message: "La fecha de vencimiento no es válida.",
+      });
+    }
+
+    const today = new Date();
+    today.setUTCHours(0, 0, 0, 0);
+
+    if (expiration <= today) {
+      return res.status(400).json({
+        message: "El lote debe tener una fecha de vencimiento futura.",
+      });
+    }
+
+    const quantity = Number(stock);
+
+    if (!Number.isSafeInteger(quantity) || quantity <= 0) {
+      return res.status(400).json({
+        message: "La cantidad debe ser un entero mayor que cero.",
+      });
+    }
+
+    const cost = Number(unitCost ?? 0);
+
+    if (!Number.isFinite(cost) || cost < 0) {
+      return res.status(400).json({
+        message: "El costo unitario no es válido.",
+      });
+    }
+
+    const session = await mongoose.startSession();
+
+    try {
+      let createdBatchId;
+
+      await session.withTransaction(async () => {
+        const product = await Product.findOne({
+          _id: productId,
+          active: { $ne: false },
+        }).session(session);
+
+        if (!product) {
+          const error = new Error("El producto no existe o está inactivo.");
+          error.status = 404;
+          throw error;
+        }
+
+        const existingBatch = await Batch.findOne({
+          branch: req.branchId,
           product: productId,
           batchNumber: normalizedBatchNumber,
-          expirationDate: expiration,
-          stock: quantity,
-          initialStock: quantity,
-          unitCost: cost,
-          active: true,
-        },
-      ],
-      { session },
-    );
+        }).session(session);
 
-    // Actualizar el stock general de forma atómica
-    const updatedProduct = await Product.findOneAndUpdate(
-      {
-        _id: productId,
-        active: { $ne: false },
-      },
-      {
-        $inc: { stock: quantity },
-      },
-      {
-        session,
-        returnDocument: "after",
-        runValidators: true,
-      },
-    );
+        if (existingBatch) {
+          const error = new Error(
+            "Este número de lote ya existe para el producto en esta sucursal.",
+          );
+          error.status = 409;
+          throw error;
+        }
 
-    if (!updatedProduct) {
-      throw new Error("No se pudo actualizar el stock del producto.");
+        const [batch] = await Batch.create(
+          [
+            {
+              branch: req.branchId,
+              product: productId,
+              batchNumber: normalizedBatchNumber,
+              expirationDate: expiration,
+              stock: quantity,
+              initialStock: quantity,
+              unitCost: cost,
+              active: true,
+            },
+          ],
+          { session },
+        );
+
+        const updatedProduct = await Product.findOneAndUpdate(
+          {
+            _id: productId,
+            active: { $ne: false },
+          },
+          {
+            $inc: { stock: quantity },
+          },
+          {
+            session,
+            returnDocument: "after",
+            runValidators: true,
+          },
+        );
+
+        if (!updatedProduct) {
+          throw new Error("No se pudo actualizar el stock del producto.");
+        }
+
+        const previousStock = updatedProduct.stock - quantity;
+
+        await InventoryMovement.create(
+          [
+            {
+              product: productId,
+              branch: req.branchId,
+              batch: batch._id,
+              type: "entrada",
+              origin: "lote_inicial",
+              quantity,
+              previousStock,
+              newStock: updatedProduct.stock,
+              reason: `Entrada inicial de lote ${normalizedBatchNumber}`,
+              user: req.user.id,
+            },
+          ],
+          { session },
+        );
+
+        createdBatchId = batch._id;
+      });
+
+      const populatedBatch = await Batch.findById(createdBatchId)
+        .populate("product", "name stock active")
+        .populate("branch", "code name");
+
+      return res.status(201).json(populatedBatch);
+    } catch (error) {
+      console.error("Error al registrar lote:", error);
+
+      if (error.code === 11000 || error.status === 409) {
+        return res.status(409).json({
+          message:
+            "Este número de lote ya existe para el producto en esta sucursal.",
+        });
+      }
+
+      return res.status(error.status || 500).json({
+        message: error.status ? error.message : "No se pudo registrar el lote.",
+      });
+    } finally {
+      await session.endSession();
     }
+  },
+);
 
-    const previousStock = updatedProduct.stock - quantity;
+// RECIBIR MERCANCÍA ADICIONAL DE UN LOTE
+router.post(
+  "/:id/restock",
+  protect,
+  authorize("admin"),
+  requireBranch,
+  async (req, res) => {
+    const { id } = req.params;
+    const { quantity, reason } = req.body;
 
-    // Registrar la entrada en el Kardex
-    await InventoryMovement.create(
-      [
-        {
-          product: productId,
-          batch: batch._id,
-          type: "entrada",
-          origin: "lote_inicial",
-          quantity,
-          previousStock,
-          newStock: updatedProduct.stock,
-          reason: `Entrada inicial de lote ${normalizedBatchNumber}`,
-          user: req.user.id,
-        },
-      ],
-      { session },
-    );
-
-    await session.commitTransaction();
-
-    const populatedBatch = await Batch.findById(batch._id).populate(
-      "product",
-      "name stock active",
-    );
-
-    return res.status(201).json(populatedBatch);
-  } catch (error) {
-    if (session.inTransaction()) {
-      await session.abortTransaction();
-    }
-
-    console.error("Error al registrar lote:", error);
-
-    if (error.code === 11000) {
-      return res.status(409).json({
-        message: "Este número de lote ya existe para el producto.",
+    if (!mongoose.isValidObjectId(id)) {
+      return res.status(400).json({
+        message: "El identificador del lote no es válido.",
       });
     }
 
-    return res.status(500).json({
-      message: "No se pudo registrar el lote.",
-    });
-  } finally {
-    await session.endSession();
-  }
-});
+    const numericQuantity = Number(quantity);
 
-//Recibir mercancía adicional de un lote existente.
+    if (
+      quantity === undefined ||
+      quantity === null ||
+      quantity === "" ||
+      !Number.isSafeInteger(numericQuantity) ||
+      numericQuantity <= 0
+    ) {
+      return res.status(400).json({
+        message: "La cantidad debe ser un entero mayor que cero.",
+      });
+    }
 
-router.post("/:id/restock", protect, authorize("admin"), async (req, res) => {
-  const { id } = req.params;
-  const { quantity, reason } = req.body;
+    if (typeof reason !== "string" || !reason.trim()) {
+      return res.status(400).json({
+        message: "El motivo de la reposición es obligatorio.",
+      });
+    }
 
-  if (!mongoose.Types.ObjectId.isValid(id)) {
-    return res.status(400).json({
-      message: "El identificador del lote no es válido.",
-    });
-  }
+    const session = await mongoose.startSession();
 
-  const numericQuantity = Number(quantity);
+    try {
+      let result;
 
-  if (
-    quantity === undefined ||
-    quantity === null ||
-    quantity === "" ||
-    !Number.isSafeInteger(numericQuantity) ||
-    numericQuantity <= 0
-  ) {
-    return res.status(400).json({
-      message: "La cantidad debe ser un entero mayor que cero.",
-    });
-  }
+      await session.withTransaction(async () => {
+        const batch = await Batch.findOne({
+          _id: id,
+          branch: req.branchId,
+          active: true,
+        }).session(session);
 
-  if (typeof reason !== "string" || !reason.trim()) {
-    return res.status(400).json({
-      message: "El motivo de la reposición es obligatorio.",
-    });
-  }
+        if (!batch) {
+          const error = new Error(
+            "Lote no encontrado o inactivo en esta sucursal.",
+          );
+          error.status = 404;
+          throw error;
+        }
 
-  const session = await mongoose.startSession();
+        const product = await Product.findOne({
+          _id: batch.product,
+          active: { $ne: false },
+        }).session(session);
 
-  try {
-    let result;
+        if (!product) {
+          const error = new Error("El producto no existe o está inactivo.");
+          error.status = 400;
+          throw error;
+        }
 
-    await session.withTransaction(async () => {
-      const batch = await Batch.findOne({
-        _id: id,
-        active: true,
-      }).session(session);
+        const today = new Date();
+        today.setUTCHours(0, 0, 0, 0);
 
-      if (!batch) {
-        const error = new Error("Lote no encontrado o inactivo.");
-        error.status = 404;
-        throw error;
-      }
+        if (batch.expirationDate < today) {
+          const error = new Error("No se puede reponer un lote vencido.");
+          error.status = 400;
+          throw error;
+        }
 
-      const product = await Product.findOne({
-        _id: batch.product,
-        active: { $ne: false },
-      }).session(session);
+        const previousStock = product.stock;
 
-      if (!product) {
-        const error = new Error("El producto no existe o está inactivo.");
-        error.status = 400;
-        throw error;
-      }
+        batch.stock += numericQuantity;
+        product.stock += numericQuantity;
 
-      // No recibir mercancía en lotes vencidos.
-      const today = new Date();
-      today.setUTCHours(0, 0, 0, 0);
+        await batch.save({ session });
+        await product.save({ session });
 
-      if (batch.expirationDate < today) {
-        const error = new Error("No se puede reponer un lote vencido.");
-        error.status = 400;
-        throw error;
-      }
+        const [movement] = await InventoryMovement.create(
+          [
+            {
+              product: product._id,
+              branch: req.branchId,
+              batch: batch._id,
+              type: "entrada",
+              origin: "reposicion",
+              quantity: numericQuantity,
+              previousStock,
+              newStock: product.stock,
+              reason: `Reposición de lote: ${reason.trim()}`,
+              user: req.user.id,
+            },
+          ],
+          { session },
+        );
 
-      const previousStock = product.stock;
+        result = {
+          batchId: batch._id,
+          batchNumber: batch.batchNumber,
+          batchStock: batch.stock,
+          productStock: product.stock,
+          movementId: movement._id,
+        };
+      });
 
-      batch.stock += numericQuantity;
-      product.stock += numericQuantity;
+      return res.status(200).json({
+        message: "Reposición registrada correctamente.",
+        ...result,
+      });
+    } catch (error) {
+      console.error("Error al reponer lote:", error);
 
-      await batch.save({ session });
-      await product.save({ session });
-
-      const [movement] = await InventoryMovement.create(
-        [
-          {
-            product: product._id,
-            batch: batch._id,
-            type: "entrada",
-            origin: "reposicion",
-            quantity: numericQuantity,
-            previousStock,
-            newStock: product.stock,
-            reason: `Reposición de lote: ${reason.trim()}`,
-            user: req.user.id,
-          },
-        ],
-        { session },
-      );
-
-      result = {
-        batchId: batch._id,
-        batchNumber: batch.batchNumber,
-        batchStock: batch.stock,
-        productStock: product.stock,
-        movementId: movement._id,
-      };
-    });
-
-    return res.status(200).json({
-      message: "Reposición registrada correctamente.",
-      ...result,
-    });
-  } catch (error) {
-    console.error(error);
-
-    return res.status(error.status || 500).json({
-      message: error.status
-        ? error.message
-        : "No se pudo registrar la reposición.",
-    });
-  } finally {
-    await session.endSession();
-  }
-});
+      return res.status(error.status || 500).json({
+        message: error.status
+          ? error.message
+          : "No se pudo registrar la reposición.",
+      });
+    } finally {
+      await session.endSession();
+    }
+  },
+);
 
 module.exports = router;

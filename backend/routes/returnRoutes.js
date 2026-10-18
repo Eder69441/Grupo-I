@@ -2,6 +2,7 @@ const express = require("express");
 const mongoose = require("mongoose");
 
 const protect = require("../middleware/authMiddleware");
+const requireBranch = require("../middleware/branchMiddleware");
 
 const Return = require("../models/Return");
 const Sale = require("../models/Sale");
@@ -13,9 +14,11 @@ const Batch = require("../models/Batch");
 const router = express.Router();
 
 // OBTENER DEVOLUCIONES
-router.get("/", protect, async (req, res) => {
+router.get("/", protect, requireBranch, async (req, res) => {
   try {
-    const returns = await Return.find()
+    const returns = await Return.find({
+      branch: req.branchId,
+    })
       .populate("sale", "saleNumber createdAt")
       .populate("user", "name username")
       .populate("cashSession", "sessionNumber status")
@@ -35,7 +38,7 @@ router.get("/", protect, async (req, res) => {
 
 // CREAR DEVOLUCIÓN
 
-router.post("/", protect, async (req, res) => {
+router.post("/", protect, requireBranch, async (req, res) => {
   const { saleId, items, reason, refundMethod } = req.body;
 
   const fail = (status, message) => {
@@ -78,6 +81,7 @@ router.post("/", protect, async (req, res) => {
       const sale = await Sale.findOneAndUpdate(
         {
           _id: saleId,
+          branch: req.branchId,
           status: "completed",
         },
         {
@@ -128,6 +132,7 @@ router.post("/", protect, async (req, res) => {
       }
 
       const cashSession = await CashSession.findOne({
+        branch: req.branchId,
         status: "open",
       }).session(session);
 
@@ -329,6 +334,7 @@ router.post("/", protect, async (req, res) => {
             const batch = await Batch.findOne({
               _id: allocation.batch,
               product: product._id,
+              branch: req.branchId,
               active: true,
               expirationDate: { $gt: today },
             }).session(session);
@@ -353,6 +359,7 @@ router.post("/", protect, async (req, res) => {
               [
                 {
                   product: product._id,
+                  branch: req.branchId,
                   batch: batch._id,
                   type: "entrada",
                   origin: "devolucion",
@@ -398,6 +405,7 @@ router.post("/", protect, async (req, res) => {
           {
             returnNumber,
             sale: sale._id,
+            branch: req.branchId,
             items: returnItems,
             total,
             reason: reason.trim(),
@@ -434,11 +442,22 @@ router.post("/", protect, async (req, res) => {
 });
 
 // OBTENER DEVOLUCIONES DE UNA VENTA
-router.get("/sale/:saleId", protect, async (req, res) => {
+router.get("/sale/:saleId", protect, requireBranch, async (req, res) => {
   try {
     if (!mongoose.Types.ObjectId.isValid(req.params.saleId)) {
       return res.status(400).json({
         message: "El identificador de la venta no es válido.",
+      });
+    }
+
+    const sale = await Sale.findOne({
+      _id: req.params.saleId,
+      branch: req.branchId,
+    }).select("_id");
+
+    if (!sale) {
+      return res.status(404).json({
+        message: "La venta no existe en esta sucursal.",
       });
     }
 

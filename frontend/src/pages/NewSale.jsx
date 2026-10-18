@@ -6,14 +6,31 @@ import SaleCart from "../components/sales/SaleCart";
 import PaymentTerminal from "../components/sales/PaymentTerminal";
 import ProductCodeScanner from "../components/sales/ProductCodeScanner";
 
+import { useBranch } from "../context/useBranch";
+
 import ErrorMessage from "../components/common/ErrorMessage";
 import SuccessMessage from "../components/common/SuccessMessage";
 import Spinner from "../components/common/Spinner";
 
 import { getProducts } from "../services/productService";
 import { createSale } from "../services/saleService";
+import { getBranchInventory } from "../services/branchInventoryService";
 
 export default function NewSale() {
+  const { selectedBranchId } = useBranch();
+
+  if (!selectedBranchId) {
+    return (
+      <div className="rounded-xl border border-amber-200 bg-amber-50 p-5 text-amber-800">
+        Selecciona una sucursal para registrar ventas.
+      </div>
+    );
+  }
+
+  return <NewSaleContent key={selectedBranchId} branchId={selectedBranchId} />;
+}
+
+function NewSaleContent({ branchId }) {
   const [products, setProducts] = useState([]);
   const [cart, setCart] = useState([]);
 
@@ -31,40 +48,77 @@ export default function NewSale() {
   const [approvedPayment, setApprovedPayment] = useState(null);
 
   const loadProducts = async () => {
-    try {
-      const response = await getProducts();
+    const [productsResponse, inventoryResponse] = await Promise.all([
+      getProducts(),
+      getBranchInventory(branchId),
+    ]);
 
-      setProducts(response.data);
-    } catch (error) {
-      console.error(error);
+    const stockByProduct = new Map(
+      inventoryResponse.map((item) => [
+        String(item.productId),
+        Number(item.stock) || 0,
+      ]),
+    );
 
-      setError(
-        error.response?.data?.message ||
-          "No se pudieron actualizar los medicamentos.",
-      );
-    }
+    const productsWithBranchStock = productsResponse.data.map((product) => ({
+      ...product,
+      globalStock: product.stock,
+      stock: stockByProduct.get(String(product._id)) ?? 0,
+    }));
+
+    setProducts(productsWithBranchStock);
+
+    return productsWithBranchStock;
   };
 
   useEffect(() => {
-    const fetchProducts = async () => {
+    let cancelled = false;
+
+    async function fetchProducts() {
       try {
-        const response = await getProducts();
+        setLoading(true);
 
-        setProducts(response.data);
-      } catch (error) {
-        console.error(error);
+        const [productsResponse, inventoryResponse] = await Promise.all([
+          getProducts(),
+          getBranchInventory(branchId),
+        ]);
 
-        setError(
-          error.response?.data?.message ||
-            "No se pudieron cargar los medicamentos.",
+        if (cancelled) return;
+
+        const stockByProduct = new Map(
+          inventoryResponse.map((item) => [
+            String(item.productId),
+            Number(item.stock) || 0,
+          ]),
         );
+
+        setProducts(
+          productsResponse.data.map((product) => ({
+            ...product,
+            globalStock: product.stock,
+            stock: stockByProduct.get(String(product._id)) ?? 0,
+          })),
+        );
+      } catch (error) {
+        if (!cancelled) {
+          setError(
+            error.response?.data?.message ||
+              "No se pudo cargar el inventario de la sucursal.",
+          );
+        }
       } finally {
-        setLoading(false);
+        if (!cancelled) {
+          setLoading(false);
+        }
       }
-    };
+    }
 
     fetchProducts();
-  }, []);
+
+    return () => {
+      cancelled = true;
+    };
+  }, [branchId]);
 
   const invalidateApprovedPayment = () => {
     setApprovedPayment(null);
@@ -108,70 +162,78 @@ export default function NewSale() {
     });
   };
 
+  const handleScanProduct = async (code, requestedQuantity = 1) => {
+    if (saving || showPaymentTerminal || loading) {
+      return false;
+    }
 
-const handleScanProduct = async (code) => {
-  if (saving || showPaymentTerminal || loading) {
-    return false;
-  }
+    const rawCode = String(code).trim();
+    let productCode = rawCode;
+    let quantity = Number(requestedQuantity);
 
-  const normalizedCode = String(code).trim().toLowerCase();
+    // Permite códigos como 3*MED-001
+    const multiQuantityMatch = rawCode.match(/^(\d+)\*(.+)$/);
 
-  if (!normalizedCode) return false;
+    if (multiQuantityMatch) {
+      quantity = Number(multiQuantityMatch[1]);
+      productCode = multiQuantityMatch[2].trim();
+    }
 
-  const product = products.find((item) => {
-    const internalCode = String(item.code ?? "")
-      .trim()
-      .toLowerCase();
+    if (!Number.isSafeInteger(quantity) || quantity <= 0) {
+      setError("La cantidad debe ser un entero mayor que cero.");
+      return false;
+    }
 
-    const barcode = String(item.barcode ?? "")
-      .trim()
-      .toLowerCase();
+    const normalizedCode = productCode.toLowerCase();
 
-    return (
-      internalCode === normalizedCode ||
-      barcode === normalizedCode
-    );
-  });
+    if (!normalizedCode) {
+      return false;
+    }
 
-  if (!product) {
-    setError(`No existe un producto con el código "${code}".`);
-    return false;
-  }
+    const product = products.find((item) => {
+      const internalCode = String(item.code ?? "")
+        .trim()
+        .toLowerCase();
 
-  if (product.active === false) {
-    setError(`El producto "${product.name}" está desactivado.`);
-    return false;
-  }
+      const barcode = String(item.barcode ?? "")
+        .trim()
+        .toLowerCase();
 
-  const stock = Number(product.stock);
+      return (
+        (internalCode && internalCode === normalizedCode) ||
+        (barcode && barcode === normalizedCode)
+      );
+    });
 
-  if (!Number.isFinite(stock) || stock <= 0) {
-    setError(`El producto "${product.name}" no tiene existencias.`);
-    return false;
-  }
+    if (!product) {
+      setError(`No existe un producto con el código "${productCode}".`);
+      return false;
+    }
 
-  const existingItem = cart.find(
-    (item) => item.product._id === product._id,
-  );
+    if (product.active === false) {
+      setError(`El producto "${product.name}" está desactivado.`);
+      return false;
+    }
 
-  if (existingItem && existingItem.quantity >= stock) {
-    setError(
-      `Stock insuficiente para "${product.name}". Disponible: ${stock}.`,
-    );
+    const stock = Number(product.stock);
 
-    return false;
-  }
+    if (!Number.isFinite(stock) || stock <= 0) {
+      setError(`El producto "${product.name}" no tiene existencias.`);
+      return false;
+    }
 
-  handleAddProduct(product);
+    const existingItem = cart.find((item) => item.product._id === product._id);
 
-  return {
-    name: product.name,
-    quantity: (existingItem?.quantity || 0) + 1,
-  };
-};
+    const currentQuantity = existingItem?.quantity || 0;
+    const newQuantity = currentQuantity + quantity;
 
+    if (newQuantity > stock) {
+      setError(
+        `Stock insuficiente para "${product.name}". Disponible: ${stock}.`,
+      );
+      return false;
+    }
 
-    // Actualizar carrito con la cantidad solicitada
     invalidateApprovedPayment();
     setError("");
     setSuccess("");
@@ -322,6 +384,8 @@ const handleScanProduct = async (code) => {
       setSuccess("");
 
       const payload = {
+        branchId,
+
         items: cart.map((item) => ({
           product: item.product._id,
           quantity: item.quantity,

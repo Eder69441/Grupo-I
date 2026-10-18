@@ -56,9 +56,11 @@ async function allocateFEFO(productId, quantity, branchId, session) {
 }
 
 // HISTORIAL DE VENTAS
-router.get("/", protect, async (req, res) => {
+router.get("/", protect, requireBranch, async (req, res) => {
   try {
-    const sales = await Sale.find()
+    const sales = await Sale.find({
+      branch: req.branchId,
+    })
       .populate("user", "name username")
       .populate("cashSession", "sessionNumber status openedAt closedAt")
       .populate("items.batches.batch", "batchNumber expirationDate active")
@@ -91,9 +93,9 @@ router.post("/", protect, requireBranch, async (req, res) => {
     session.startTransaction();
 
     const cashSession = await CashSession.findOne({
-  branch: req.branchId,
-  status: "open",
-}).session(session);
+      branch: req.branchId,
+      status: "open",
+    }).session(session);
 
     if (!cashSession) {
       const error = new Error(
@@ -146,7 +148,12 @@ router.post("/", protect, requireBranch, async (req, res) => {
       }
 
       // Asignar automáticamente los lotes.
-      const allocations = await allocateFEFO(product._id, quantity, req.branchId, session,);
+      const allocations = await allocateFEFO(
+        product._id,
+        quantity,
+        req.branchId,
+        session,
+      );
       const previousStock = product.stock;
       const subtotal = product.price * quantity;
 
@@ -162,16 +169,16 @@ router.post("/", protect, requireBranch, async (req, res) => {
         const newRunningStock = runningStock - allocation.quantity;
 
         movements.push({
-  product: product._id,
-  branch: req.branchId,
-  batch: batch._id,
-  type: "salida",
-  origin: "venta",
-  quantity: allocation.quantity,
-  previousStock: runningStock,
-  newStock: newRunningStock,
-  user: req.user.id,
-});
+          product: product._id,
+          branch: req.branchId,
+          batch: batch._id,
+          type: "salida",
+          origin: "venta",
+          quantity: allocation.quantity,
+          previousStock: runningStock,
+          newStock: newRunningStock,
+          user: req.user.id,
+        });
 
         runningStock = newRunningStock;
       }
@@ -229,6 +236,7 @@ router.post("/", protect, requireBranch, async (req, res) => {
       const payment = await PaymentTransaction.findOneAndUpdate(
         {
           _id: paymentTransaction,
+          branch: req.branchId,
           status: "approved",
           sale: null,
           user: req.user.id,
@@ -266,23 +274,23 @@ router.post("/", protect, requireBranch, async (req, res) => {
     // CREAR VENTA
     const saleNumber = `V-${Date.now()}`;
 
-const [sale] = await Sale.create(
-  [
-    {
-      saleNumber,
-      branch: req.branchId,
-      items: saleItems,
-      total,
-      user: req.user.id,
-      cashSession: cashSession._id,
-      paymentMethod,
-      amountReceived: finalAmountReceived,
-      change,
-      paymentTransaction: authorizedPayment?._id || null,
-    },
-  ],
-  { session },
-);
+    const [sale] = await Sale.create(
+      [
+        {
+          saleNumber,
+          branch: req.branchId,
+          items: saleItems,
+          total,
+          user: req.user.id,
+          cashSession: cashSession._id,
+          paymentMethod,
+          amountReceived: finalAmountReceived,
+          change,
+          paymentTransaction: authorizedPayment?._id || null,
+        },
+      ],
+      { session },
+    );
 
     // REGISTRAR SALIDAS POR LOTE EN KARDEX
     for (const movement of movements) {
@@ -396,63 +404,71 @@ const [sale] = await Sale.create(
 });
 
 // ANULAR UNA VENTA
-router.patch("/:id/cancel", protect, async (req, res) => {
+
+// ANULAR UNA VENTA POR SUCURSAL
+router.patch("/:id/cancel", protect, requireBranch, async (req, res) => {
+  if (!mongoose.isValidObjectId(req.params.id)) {
+    return res.status(400).json({
+      message: "El identificador de la venta no es válido.",
+    });
+  }
+
   const session = await mongoose.startSession();
 
   try {
     session.startTransaction();
 
-    // BUSCAR VENTA
-    const sale = await Sale.findById(req.params.id).session(session);
+    const sale = await Sale.findOne({
+      _id: req.params.id,
+      branch: req.branchId,
+    }).session(session);
 
     if (!sale) {
       throw new Error("SALE_NOT_FOUND");
     }
 
-    // EVITAR DOBLE ANULACIÓN
     if (sale.status === "cancelled") {
       throw new Error("SALE_ALREADY_CANCELLED");
     }
 
-    // Verificar si la venta pertenece a una caja cerrada
-    if (sale.cashSession) {
-      const saleCashSession = await CashSession.findById(
-        sale.cashSession,
-      ).session(session);
+    // No anular ventas con devoluciones registradas.
+    const hasReturns = await Return.exists({
+      sale: sale._id,
+    }).session(session);
 
-      if (saleCashSession && saleCashSession.status === "closed") {
-        throw new Error("CASH_SESSION_CLOSED");
-      }
+    if (hasReturns) {
+      throw new Error("SALE_HAS_RETURNS");
     }
 
-    const existingReturn = await Return.exists({
-  sale: sale._id,
-}).session(session);
+    // Impedir anular ventas de una caja cerrada.
+    const cashSession = await CashSession.findOne({
+      _id: sale.cashSession,
+      branch: req.branchId,
+      status: "open",
+    }).session(session);
 
-if (existingReturn) {
-  throw new Error("SALE_HAS_RETURNS");
-}
+    if (!cashSession) {
+      throw new Error("CASH_SESSION_NOT_OPEN");
+    }
 
-    // DEVOLVER PRODUCTOS A SUS LOTES ORIGINALES
     for (const item of sale.items) {
       const product = await Product.findById(item.product).session(session);
 
       if (!product) {
-        throw new Error(`PRODUCT_NOT_FOUND_CANCEL:${item.productName}`);
+        throw new Error("PRODUCT_NOT_FOUND");
       }
 
-      // Validar que la venta tenga información de lotes.
-      if (!item.batches || item.batches.length === 0) {
-        throw new Error("SALE_WITHOUT_BATCHES");
+      if (!item.batches?.length) {
+        throw new Error("SALE_BATCHES_MISSING");
       }
 
-      const totalBatchQuantity = item.batches.reduce(
-        (sum, allocation) => sum + allocation.quantity,
+      const restoredQuantity = item.batches.reduce(
+        (total, allocation) => total + allocation.quantity,
         0,
       );
 
-      if (totalBatchQuantity !== item.quantity) {
-        throw new Error("INVALID_BATCH_ALLOCATION");
+      if (restoredQuantity !== item.quantity) {
+        throw new Error("SALE_BATCHES_MISMATCH");
       }
 
       let runningStock = product.stock;
@@ -461,6 +477,7 @@ if (existingReturn) {
         const batch = await Batch.findOne({
           _id: allocation.batch,
           product: product._id,
+          branch: req.branchId,
         }).session(session);
 
         if (!batch) {
@@ -469,26 +486,23 @@ if (existingReturn) {
 
         const previousStock = runningStock;
 
-        // Restaurar stock del lote original.
         batch.stock += allocation.quantity;
+        runningStock += allocation.quantity;
 
         await batch.save({ session });
 
-        // Actualizar stock general.
-        runningStock += allocation.quantity;
-
-        // Registrar entrada en Kardex.
         await InventoryMovement.create(
           [
             {
               product: product._id,
+              branch: req.branchId,
               batch: batch._id,
               type: "entrada",
               origin: "anulacion",
               quantity: allocation.quantity,
               previousStock,
               newStock: runningStock,
-              reason: `Anulación venta ${sale.saleNumber}`,
+              reason: `Anulación de venta ${sale.saleNumber}`,
               user: req.user.id,
             },
           ],
@@ -497,91 +511,61 @@ if (existingReturn) {
       }
 
       product.stock = runningStock;
-
       await product.save({ session });
     }
 
-    // CAMBIAR ESTADO DE LA VENTA
     sale.status = "cancelled";
+    await sale.save({ session });
 
-    await sale.save({
-      session,
-    });
-
-    // CONFIRMAR TRANSACCIÓN
     await session.commitTransaction();
 
     const cancelledSale = await Sale.findById(sale._id)
       .populate("user", "name username")
-      .populate("items.product", "name")
-      .populate("cashSession", "sessionNumber status openedAt");
+      .populate("branch", "code name")
+      .populate("cashSession", "sessionNumber status")
+      .populate("items.batches.batch", "batchNumber expirationDate");
 
-    res.json(cancelledSale);
+    return res.json(cancelledSale);
   } catch (error) {
     if (session.inTransaction()) {
       await session.abortTransaction();
-
-      }
-    
     }
 
     console.error("Error al anular venta:", error);
 
-    if (error.message === "SALE_HAS_RETURNS") {
-        return res.status(409).json({
-          message:
-            "Esta venta tiene devoluciones registradas y no puede anularse.",
-        });
+    const errors = {
+      SALE_NOT_FOUND: [404, "La venta no existe en esta sucursal."],
+      SALE_ALREADY_CANCELLED: [409, "Esta venta ya fue anulada."],
+      SALE_HAS_RETURNS: [
+        409,
+        "La venta tiene devoluciones y no puede anularse.",
+      ],
+      CASH_SESSION_NOT_OPEN: [
+        409,
+        "No se puede anular una venta de una caja cerrada.",
+      ],
+      PRODUCT_NOT_FOUND: [404, "No se encontró un producto de la venta."],
+      SALE_BATCHES_MISSING: [
+        409,
+        "La venta no tiene información de lotes para restaurar.",
+      ],
+      SALE_BATCHES_MISMATCH: [
+        409,
+        "Las cantidades de los lotes no coinciden con la venta.",
+      ],
+      BATCH_NOT_FOUND: [
+        409,
+        "No se encontró un lote original en esta sucursal.",
+      ],
+    };
 
-    if (error.message === "SALE_NOT_FOUND") {
-      return res.status(404).json({
-        message: "La venta no existe.",
-      });
+    if (errors[error.message]) {
+      const [status, message] = errors[error.message];
+
+      return res.status(status).json({ message });
     }
 
-    // Impedir anular ventas que ya tienen devoluciones.
-    if (error.message === "SALE_ALREADY_CANCELLED") {
-      return res.status(400).json({
-        message: "La venta ya fue anulada.",
-      });
-    }
-
-    if (error.message === "CASH_SESSION_CLOSED") {
-      return res.status(400).json({
-        message:
-          "No se puede anular una venta perteneciente a una caja cerrada. Debe registrarse como devolución o reembolso.",
-      });
-    }
-
-    if (error.message.startsWith("PRODUCT_NOT_FOUND_CANCEL:")) {
-      const productName = error.message.split(":")[1];
-
-      return res.status(404).json({
-        message: `No se encontró el producto ${productName}.`,
-      });
-    }
-
-    if (error.message === "SALE_WITHOUT_BATCHES") {
-      return res.status(400).json({
-        message:
-          "Esta venta no tiene información de lotes. " +
-          "Requiere revisión antes de anularse.",
-      });
-    }
-
-    if (error.message === "INVALID_BATCH_ALLOCATION") {
-      return res.status(400).json({
-        message: "Las cantidades de los lotes no coinciden con la venta.",
-      });
-    }
-
-    if (error.message === "BATCH_NOT_FOUND") {
-      return res.status(404).json({
-        message: "No se encontró uno de los lotes originales de la venta.",
-      });
-    }
-
-    res.status(500).json({
+    return res.status(500).json({
       message: "No se pudo anular la venta.",
     });
   } finally {

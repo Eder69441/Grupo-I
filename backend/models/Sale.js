@@ -74,11 +74,11 @@ const saleSchema = new mongoose.Schema(
     },
 
     branch: {
-  type: mongoose.Schema.Types.ObjectId,
-  ref: "Branch",
-  required: true,
-  index: true,
-},
+      type: mongoose.Schema.Types.ObjectId,
+      ref: "Branch",
+      required: true,
+      index: true,
+    },
 
     items: {
       type: [saleItemSchema],
@@ -110,6 +110,12 @@ const saleSchema = new mongoose.Schema(
       type: String,
       enum: ["completed", "cancelled"],
       default: "completed",
+    },
+
+    returnRevision: {
+      type: Number,
+      default: 0,
+      min: 0,
     },
 
     paymentMethod: {

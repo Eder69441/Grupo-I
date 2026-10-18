@@ -55,6 +55,13 @@ const paymentTransactionSchema = new mongoose.Schema(
       required: true,
     },
 
+    branch: {
+      type: mongoose.Schema.Types.ObjectId,
+      ref: "Branch",
+      required: true,
+      index: true,
+    },
+
     sale: {
       type: mongoose.Schema.Types.ObjectId,
       ref: "Sale",
